@@ -69,10 +69,7 @@ class Parser:
 
     def parse_dataset(self):
         parser = argparse.ArgumentParser(allow_abbrev=False)
-        parser.add_argument('--dataset_type', type=str, choices=['beauty', 'vinlys', 'steam', 'ml-1m', 'ml-20m', 'rc15'], help='select the dataset to use for the experiment')
-        parser.add_argument('--min_rating', type=int, help='Minimum rating to regard as implicit rating. Interactions whose rating is below this value will be discarded')
-        parser.add_argument('--min_uc', type=int, help='Discard users whose number of ratings is below this value')
-        parser.add_argument('--min_sc', type=int, help='Discard items whose number of ratings is below this value')
+        parser.add_argument('--dataset_type', type=str, choices=['amz_beauty', 'amz_game', 'ml-1m', 'ml-20m', 'rc15', 'retailrocket', 'taobao'], help='select the dataset to use for the experiment')
         parser.add_argument('--use_negatives', type=str2bool, help='whether to use the items with negative ratings')
         parser.add_argument('--eval_type', type=str, choices=['leave_positive_out'], help='How to split the dataset based on the evlauation protocol')
 

@@ -15,8 +15,9 @@ def main(sys_argv: List[str] = None):
     # Dataset
     dataset = init_dataset(args)
     dataset = dataset.load_dataset()
-    import pdb
-    pdb.set_trace()
+    print('int:',dataset['num_interactions'])
+    print('user:', len(dataset['umap']))
+    print('item:', len(dataset['smap']))
 
     # DataLoader
 

@@ -1,0 +1,10 @@
+# jupyter notebook
+.ipynb_checkpoints
+__pycache__
+
+# dataset
+/data
+
+# experimental logs
+/experiments
+

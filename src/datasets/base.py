@@ -29,9 +29,14 @@ class AbstractDataset(metaclass=ABCMeta):
         
         """
         self.args = args
-        self.min_rating = args.min_rating
-        self.min_uc = args.min_uc
-        self.min_sc = args.min_sc 
+        if args.dataset_type in ['amz_beauty', 'amz_game', 'ml-1m', 'ml-20m']:
+            self.min_rating = 4
+        elif args.dataset_type in ['rc15', 'retailrocket', 'taobao']:
+            self.min_rating = 1
+        else:
+            raise AssertionError
+        self.min_uc = 3
+        self.min_sc = 5
         self.use_negatives = args.use_negatives 
         self.eval_type = args.eval_type
         self.local_data_folder = args.local_data_folder
@@ -167,8 +172,6 @@ class AbstractDataset(metaclass=ABCMeta):
             user_sizes = df[df['rating'] >= self.min_rating].groupby('uid').size()
             good_users = user_sizes.index[user_sizes >= self.min_uc]
             df = df[df['uid'].isin(good_users)]
-            import pdb
-            pdb.set_trace()
 
         return df
 
