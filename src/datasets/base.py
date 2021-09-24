@@ -7,8 +7,7 @@ from tqdm import tqdm
 from dotmap import DotMap
 from abc import *
 from pathlib import Path
-from datetime import date
-
+from ..utils import *
 tqdm.pandas()
 
 
@@ -18,11 +17,11 @@ class AbstractDataset(metaclass=ABCMeta):
         Arguments
         ---------
         min_rating (int): minimum rating to divide positive / negative items
-        min_uc (int): minimum user interactions
+        min_uc (int): minimum (positive) user interactions
         min_sc (int): minimum item interactions
         use_negatives (bool): whether to filter negative items for input
         eval_type (str): [leave_positive_out]
-        # TODO: (append [leave_items_out] for reinforcement learning experiments?)
+        # TODO: (append [leave_(multiple)items_out] for reinforcement learning experiments?)
         
         dataset class will be preprocessed and load by the funcion: load_dataset()
         1. download raw dataset
@@ -74,6 +73,7 @@ class AbstractDataset(metaclass=ABCMeta):
     def _preprocess(self):
         # (1) preprocess if necessary
         dataset_path = self._get_preprocessed_dataset_path()
+
         if dataset_path.is_file():
             print('Already preprocessed. Skip preprocessing')
             return
@@ -87,7 +87,7 @@ class AbstractDataset(metaclass=ABCMeta):
             print('Raw data already exists. Skip downloading')
         else:
             print("Raw file doesn't exist. Downloading...")
-            self._download_raw_dataset()
+            self._download_raw_dataset(raw_dataset_path)
         
         # (3) load dataset
         # columns: uid, sid, rating, timestamp
@@ -106,7 +106,7 @@ class AbstractDataset(metaclass=ABCMeta):
         df, umap, smap = self.densify_index(df)
         
         # (7) split into train, val, test datasets
-        user2dict, train_targets, validation_targets, test_targets = self.split_df(df, len(umap))
+        user2dict, train_targets, validation_targets, test_targets = self.split_df(df)
 
         special_tokens = DotMap()
         special_tokens.pad = 0
@@ -116,7 +116,6 @@ class AbstractDataset(metaclass=ABCMeta):
         special_tokens.eos = item_count + 3
 
         num_interactions = len(df)
-        num_days = df.days.max() + 1
 
         dataset = {'user2dict': user2dict,
                    'train_targets': train_targets,
@@ -130,7 +129,7 @@ class AbstractDataset(metaclass=ABCMeta):
         with dataset_path.open('wb') as f:
             pickle.dump(dataset, f)
 
-    def _download_raw_dataset(self):
+    def _download_raw_dataset(self, dataset_path):
         if self.is_zipfile():
             tmproot = Path(tempfile.mkdtemp())
             tmpzip = tmproot.joinpath('file.zip')
@@ -139,15 +138,15 @@ class AbstractDataset(metaclass=ABCMeta):
             unzip(tmpzip, tmpfolder)
             if self.zip_file_content_is_folder():
                 tmpfolder = tmpfolder.joinpath(os.listdir(tmpfolder)[0])
-            shutil.move(tmpfolder, folder_path)
+            shutil.move(tmpfolder, dataset_path)
             shutil.rmtree(tmproot)
             print()
         else:
             tmproot = Path(tempfile.mkdtemp())
             tmpfile = tmproot.joinpath('file')
             download(self.url(), tmpfile)
-            folder_path.mkdir(parents=True)
-            shutil.move(tmpfile, folder_path.joinpath('ratings.csv'))
+            dataset_path.mkdir(parents=True)
+            shutil.move(tmpfile, dataset_path.joinpath('ratings.csv'))
             shutil.rmtree(tmproot)
             print()
             
@@ -164,9 +163,12 @@ class AbstractDataset(metaclass=ABCMeta):
             df = df[df['sid'].isin(good_items)]
 
         if self.min_uc > 0:
-            user_sizes = df.groupby('uid').size()
+            # number of positive interactions
+            user_sizes = df[df['rating'] >= self.min_rating].groupby('uid').size()
             good_users = user_sizes.index[user_sizes >= self.min_uc]
             df = df[df['uid'].isin(good_users)]
+            import pdb
+            pdb.set_trace()
 
         return df
 
@@ -178,7 +180,7 @@ class AbstractDataset(metaclass=ABCMeta):
         df['sid'] = df['sid'].map(smap)
         return df, umap, smap
 
-    def split_df(self, df, user_count):
+    def split_df(self, df):
         def sort_by_time(d):
             d = d.sort_values(by='timestamp')
             return {'items': list(d.sid), 'timestamps': list(d.timestamp), 'ratings': list(d.rating)}
@@ -186,15 +188,22 @@ class AbstractDataset(metaclass=ABCMeta):
         user_group = df.groupby('uid')
         user2dict = user_group.progress_apply(sort_by_time)
 
-        if self.args.split == 'leave_positive_out':
+        # TODO: convert leave_one_out to leave_positive_out
+        if self.eval_type == 'leave_positive_out':
             train_ranges = []
             val_positions = []
             test_positions = []
             for user, d in user2dict.items():
+                # get the index of the last and the second last positive items
+                # ratings: [+, +, +, -, -, +, -, +, -, +]
+                # train: [+, +, +, -, -, +, -]
+                # val: [+, +, +, -, -, +, -] -> [+]
+                # test: [+, +, +, -, -, +, -, +, -] -> [+]
                 n = len(d['items'])
-                train_ranges.append((user, n-2))  # exclusive range
-                val_positions.append((user, n-2))
-                test_positions.append((user, n-1))
+                positive_items = [i for i in range(n) if d['ratings'][i] >= self.min_rating]
+                train_ranges.append((user, positive_items[-2]-1))  # exclusive range
+                val_positions.append((user, positive_items[-2]))
+                test_positions.append((user, positive_items[-1]))
             train_targets = train_ranges
             validation_targets = val_positions
             test_targets = test_positions
@@ -208,7 +217,7 @@ class AbstractDataset(metaclass=ABCMeta):
 
     def _get_rawdata_folder_path(self):
         root = self._get_rawdata_root_path()
-        return root.joinpath(self.raw_code())
+        return root.joinpath(self.code())
 
     def _get_preprocessed_root_path(self):
         root = self._get_rawdata_root_path()
@@ -216,8 +225,8 @@ class AbstractDataset(metaclass=ABCMeta):
 
     def _get_preprocessed_folder_path(self):
         preprocessed_root = self._get_preprocessed_root_path()
-        folder_name = '{}_min_rating{}-min_uc{}-min_sc{}-split{}' \
-            .format(self.code(), self.min_rating, self.min_uc, self.min_sc, self.split)
+        folder_name = '{}_min_rating{}-min_uc{}-min_sc{}--un{}-eval{}' \
+            .format(self.code(), self.min_rating, self.min_uc, self.min_sc, self.use_negatives, self.eval_type)
         return preprocessed_root.joinpath(folder_name)
 
     def _get_preprocessed_dataset_path(self):
