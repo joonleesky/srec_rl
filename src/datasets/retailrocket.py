@@ -28,9 +28,9 @@ class RetailRocketDataset(AbstractDataset):
         df = pd.read_csv(file_path, sep=',')
         
         # convert event to rating
-        df = df.replace('view', 0)
-        df = df.replace('addtocart', 1)
-        df = df.replace('transaction', 2)
+        df = df.replace('view', 1)
+        df = df.replace('addtocart', 2)
+        df = df.replace('transaction', 3)
         df = df.rename({'visitorid': 'uid', 
                         'itemid': 'sid',
                         'event': 'rating'}, axis='columns')

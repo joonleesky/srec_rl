@@ -33,8 +33,8 @@ class RC15Dataset(AbstractDataset):
         buy_df = pd.read_csv(buy_path, sep=',', names=['uid','timestamp','sid','price','quantity'])
         click_df = pd.read_csv(click_path, sep=',', names=['uid','timestamp','sid','category'])
 
-        click_df['rating'] = 0
-        buy_df['rating'] = 1
+        click_df['rating'] = 1
+        buy_df['rating'] = 2
         click_df = click_df[['uid', 'sid', 'rating', 'timestamp']]
         buy_df = buy_df[['uid', 'sid', 'rating', 'timestamp']]
         df = pd.concat([click_df, buy_df])

@@ -42,7 +42,6 @@ class Parser:
         configs.update(self.parse_top())
         configs.update(self.parse_dataset())
         configs.update(self.parse_dataloader())
-        configs.update(self.parse_negative_sampler())
         configs.update(self.parse_trainer())
         configs.update(self.parse_model())
         configs.update(self.parse_wandb())
@@ -54,6 +53,7 @@ class Parser:
         parser = argparse.ArgumentParser(allow_abbrev=False)
         parser.add_argument('--template', type=str)
         parser.add_argument('--mode', type=str, choices=['train', 'validate', 'test'], help='Determines whether to train/validate/test the model')
+        parser.add_argument('--seed', type=float, help='Random seed to initialize the random state')
         parser.add_argument('--pilot', type=str2bool, help='If true, run the program in minimal amount to check for errors')
         parser.add_argument('--pretrained_weights', type=str, help='Path to pretrained weights')
         parser.add_argument('--num_users', type=int, help='Number of users in the dataset. Its value is dynamically determined in dataloader')
@@ -69,27 +69,26 @@ class Parser:
 
     def parse_dataset(self):
         parser = argparse.ArgumentParser(allow_abbrev=False)
-        parser.add_argument('--dataset_type', type=str, choices=['amz_beauty', 'amz_game', 'ml-1m', 'ml-20m', 'rc15', 'retailrocket', 'taobao'], help='select the dataset to use for the experiment')
-        parser.add_argument('--use_negatives', type=str2bool, help='whether to use the items with negative ratings')
-        parser.add_argument('--eval_type', type=str, choices=['leave_positive_out'], help='How to split the dataset based on the evlauation protocol')
-
+        parser.add_argument('--dataset_type', type=str, choices=['ml-1m', 'ml-20m', 'eachmovie', 'netflix'], help='select the dataset to use for the experiment')
+        parser.add_argument('--min_rating', type=int, help='Minimum rating to classify positive interactions')
+        parser.add_argument('--min_uc', type=int, help='Number of minimum interactions for users')
+        parser.add_argument('--min_sc', type=int, help='Number of minimum interactions for items')
+        parser.add_argument('--eval_type', type=str, choices=['split_users'], help='How to split the dataset based on the evlauation protocol')
+        parser.add_argument('--train_ratio', type=float, help='ratio of the train dataset')
+        parser.add_argument('--val_ratio', type=float, help='ratio of the validation dataset')
+        parser.add_argument('--test_ratio', type=float, help='ratio of the test dataset')
         args = parser.parse_known_args(self.sys_argv)[0]
         return vars(args)
 
     def parse_dataloader(self):
         parser = argparse.ArgumentParser(allow_abbrev=False)
-        parser.add_argument('--dataloader_type', type=str, choices=['temp'], help='Select the dataloader to use for the experiment')
-        parser.add_argument('--dataloader_random_seed', type=float, help='Random seed to initialize the random state of the dataloader')
+        parser.add_argument('--dataloader_type', type=str, choices=['im'], help='Select the dataloader (im: interaction modeling)')
         parser.add_argument('--train_batch_size', type=int, help='Batch size for training')
         parser.add_argument('--val_batch_size', type=int, help='Batch size for validation')
         parser.add_argument('--test_batch_size', type=int, help='Batch size for test')
         parser.add_argument('--max_seq_len', type=int, help="maximum sequence length")
-
-        args = parser.parse_known_args(self.sys_argv)[0]
-        return vars(args)
-
-    def parse_negative_sampler(self):
-        parser = argparse.ArgumentParser(allow_abbrev=False)
+        parser.add_argument('--train_window_size', type=int, help="training window size to slide over the user's entire item sequences to obtain subsequences for training")
+        # negative sampler for dataloader
         parser.add_argument('--train_negative_sampler_code', type=str, choices=['random', 'popular'], help='Selects negative sampler for training')
         parser.add_argument('--train_negative_sample_size', type=int, help='Negative sample size for training')
         parser.add_argument('--train_negative_sampling_seed', type=int, help='Seed to fix the random state of negative sampler for training')

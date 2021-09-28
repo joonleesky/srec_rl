@@ -4,6 +4,9 @@ from typing import List
 
 from src.arguments import Parser
 from src.datasets import init_dataset
+from src.dataloaders import init_dataloader
+from src.models import init_model
+
 
 def main(sys_argv: List[str] = None):
     # Parser
@@ -14,16 +17,28 @@ def main(sys_argv: List[str] = None):
 
     # Dataset
     dataset = init_dataset(args)
+    dataset_path = dataset._get_preprocessed_folder_path()
     dataset = dataset.load_dataset()
-    print('int:',dataset['num_interactions'])
-    print('user:', len(dataset['umap']))
-    print('item:', len(dataset['smap']))
-
+    print('num_interactions:',dataset['num_interactions'])
+    print('num_user:', len(dataset['umap']))
+    print('num_item:', len(dataset['smap']))
+    
+    import pdb
+    pdb.set_trace()
+    
     # DataLoader
+    dataloader = init_dataloader(args, dataset, dataset_path)
+    train_loader, val_loader, test_loader = dataloader.get_pytorch_dataloaders()
+    
+    # Reward Model
 
-
-
-
+    # Behavior Model
+    
+    # RL Model
+    model = init_model(args)
+    
+    
+    
     # Train
 
 if __name__ == '__main__':

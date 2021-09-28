@@ -17,9 +17,8 @@ class AbstractDataset(metaclass=ABCMeta):
         Arguments
         ---------
         min_rating (int): minimum rating to divide positive / negative items
-        min_uc (int): minimum (positive) user interactions
+        min_uc (int): minimum user interactions
         min_sc (int): minimum item interactions
-        use_negatives (bool): whether to filter negative items for input
         eval_type (str): [leave_positive_out]
         # TODO: (append [leave_(multiple)items_out] for reinforcement learning experiments?)
         
@@ -29,20 +28,18 @@ class AbstractDataset(metaclass=ABCMeta):
         
         """
         self.args = args
-        if args.dataset_type in ['amz_beauty', 'amz_game', 'ml-1m', 'ml-20m']:
-            self.min_rating = 4
-        elif args.dataset_type in ['rc15', 'retailrocket', 'taobao']:
-            self.min_rating = 1
-        else:
-            raise AssertionError
-        self.min_uc = 3
-        self.min_sc = 5
-        self.use_negatives = args.use_negatives 
+        self.rng = random.Random(args.seed)
+        self.min_rating = args.min_rating
+        self.min_uc = args.min_uc
+        self.min_sc = args.min_sc
         self.eval_type = args.eval_type
+        self.train_ratio = args.train_ratio
+        self.val_ratio = args.val_ratio
+        self.test_ratio = args.test_ratio
         self.local_data_folder = args.local_data_folder
 
-        assert self.min_uc >= 3, 'Need at least 2 ratings per user for validation and test'
-
+        assert self.train_ratio + self.val_ratio + self.test_ratio == 1.0
+        
     @classmethod
     @abstractmethod
     def code(cls):
@@ -97,21 +94,15 @@ class AbstractDataset(metaclass=ABCMeta):
         # (3) load dataset
         # columns: uid, sid, rating, timestamp
         df = self.load_ratings_df()
-        
-        # (4) filter negatives if neccessary
-        if self.use_negatives:
-            pass
-        else:
-            df = self.filter_negatives(df)
 
-        # (5) filter triplets (min_uc, min_sc)
+        # (4) filter triplets (min_uc, min_sc)
         df = self.filter_triplets(df)
         
-        # (6) create user & item ids
+        # (5) create user & item ids
         df, umap, smap = self.densify_index(df)
         
-        # (7) split into train, val, test datasets
-        user2dict, train_targets, validation_targets, test_targets = self.split_df(df)
+        # (6) split into train, val, test datasets
+        user2dict, train_uids, val_uids, test_uids = self.split_df(df)
 
         special_tokens = DotMap()
         special_tokens.pad = 0
@@ -123,9 +114,9 @@ class AbstractDataset(metaclass=ABCMeta):
         num_interactions = len(df)
 
         dataset = {'user2dict': user2dict,
-                   'train_targets': train_targets,
-                   'validation_targets': validation_targets,
-                   'test_targets': test_targets,
+                   'train_uids': train_uids,
+                   'val_uids': val_uids,
+                   'test_uids': test_uids,
                    'umap': umap,
                    'smap': smap,
                    'special_tokens': special_tokens,
@@ -154,11 +145,6 @@ class AbstractDataset(metaclass=ABCMeta):
             shutil.move(tmpfile, dataset_path.joinpath('ratings.csv'))
             shutil.rmtree(tmproot)
             print()
-            
-    def filter_negatives(self, df):
-        print('Filter itmes with negative ratings')
-        df = df[df['rating'] >= self.min_rating]
-        return df
 
     def filter_triplets(self, df):
         print('Filtering triplets')
@@ -168,8 +154,7 @@ class AbstractDataset(metaclass=ABCMeta):
             df = df[df['sid'].isin(good_items)]
 
         if self.min_uc > 0:
-            # number of positive interactions
-            user_sizes = df[df['rating'] >= self.min_rating].groupby('uid').size()
+            user_sizes = df.groupby('uid').size()
             good_users = user_sizes.index[user_sizes >= self.min_uc]
             df = df[df['uid'].isin(good_users)]
 
@@ -190,18 +175,13 @@ class AbstractDataset(metaclass=ABCMeta):
 
         user_group = df.groupby('uid')
         user2dict = user_group.progress_apply(sort_by_time)
-
-        # TODO: convert leave_one_out to leave_positive_out
+        """
         if self.eval_type == 'leave_positive_out':
             train_ranges = []
             val_positions = []
             test_positions = []
             for user, d in user2dict.items():
                 # get the index of the last and the second last positive items
-                # ratings: [+, +, +, -, -, +, -, +, -, +]
-                # train: [+, +, +, -, -, +, -]
-                # val: [+, +, +, -, -, +, -] -> [+]
-                # test: [+, +, +, -, -, +, -, +, -] -> [+]
                 n = len(d['items'])
                 positive_items = [i for i in range(n) if d['ratings'][i] >= self.min_rating]
                 train_ranges.append((user, positive_items[-2]-1))  # exclusive range
@@ -210,10 +190,21 @@ class AbstractDataset(metaclass=ABCMeta):
             train_targets = train_ranges
             validation_targets = val_positions
             test_targets = test_positions
+        """
+        if self.eval_type == 'split_users':
+            uids = user2dict.keys().values
+            self.rng.shuffle(uids)
+            train_end_idx = int(len(uids) * self.train_ratio)
+            val_end_idx = int(len(uids) * (self.train_ratio + self.val_ratio))
+            
+            train_uids = uids[:train_end_idx]
+            val_uids = uids[train_end_idx:val_end_idx]
+            test_uids = uids[val_end_idx:]
+            
         else:
             raise ValueError
 
-        return user2dict, train_targets, validation_targets, test_targets
+        return user2dict, train_uids, val_uids, test_uids
 
     def _get_rawdata_root_path(self):
         return Path(self.local_data_folder)
@@ -228,8 +219,8 @@ class AbstractDataset(metaclass=ABCMeta):
 
     def _get_preprocessed_folder_path(self):
         preprocessed_root = self._get_preprocessed_root_path()
-        folder_name = '{}_min_rating{}-min_uc{}-min_sc{}--un{}-eval{}' \
-            .format(self.code(), self.min_rating, self.min_uc, self.min_sc, self.use_negatives, self.eval_type)
+        folder_name = '{}_min_rating{}-min_uc{}-min_sc{}-eval{}' \
+            .format(self.code(), self.min_rating, self.min_uc, self.min_sc, self.eval_type)
         return preprocessed_root.joinpath(folder_name)
 
     def _get_preprocessed_dataset_path(self):

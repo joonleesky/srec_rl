@@ -25,9 +25,9 @@ class TaobaoDataset(AbstractDataset):
         df = pd.read_csv(file_path, sep=',', names=['uid','sid','category','rating','timestamp'])
         
         # convert event to rating
-        df = df.replace('pv', 0)
-        df = df.replace('fav', 1)
-        df = df.replace('cart', 2)
-        df = df.replace('buy', 3)
+        df = df.replace('pv', 1)
+        df = df.replace('fav', 2)
+        df = df.replace('cart', 3)
+        df = df.replace('buy', 4)
         df = df[['uid', 'sid', 'rating', 'timestamp']]
         return df
