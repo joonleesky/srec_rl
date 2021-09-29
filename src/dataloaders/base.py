@@ -18,10 +18,11 @@ class AbstractDataloader(metaclass=ABCMeta):
         self.test_uids = dataset['test_uids']
         self.umap = dataset['umap']
         self.smap = dataset['smap']
-        self.num_interactions = dataset['num_interactions']
         self.num_users = args.num_users = len(self.umap)
         self.num_items = args.num_items = len(self.smap)
-
+        self.num_ratings = args.num_ratings = dataset['num_ratings']
+        self.num_interactions = args.num_interactions = dataset['num_interactions']
+        
         code = args.train_negative_sampler_code
         train_negative_sampler = init_negative_sampler(code, 
                                                        self.user2dict,

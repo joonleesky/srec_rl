@@ -58,7 +58,8 @@ class Parser:
         parser.add_argument('--pretrained_weights', type=str, help='Path to pretrained weights')
         parser.add_argument('--num_users', type=int, help='Number of users in the dataset. Its value is dynamically determined in dataloader')
         parser.add_argument('--num_items', type=int, help='Number of items in the dataset. Its value is dynamically determined in dataloader')
-        parser.add_argument('--num_interactions', type=int, help='Number of possible ratings in the dataset. Its value is dynamically determined in dataloader')
+        parser.add_argument('--num_ratings', type=int, help='Number of possible ratings in the dataset. Its value is dynamically determined in dataloader')
+        parser.add_argument('--num_interactions', type=int, help='Number of interactions in the dataset. Its value is dynamically determined in dataloader')
         parser.add_argument('--local_data_folder', type=str, help='Folder that contains raw/preprocessed data')
         parser.add_argument('--experiment_root', type=str, help='Root folder of all experiments')
         parser.add_argument('--experiment_group', type=str, help='Group folder inside Root folder')
@@ -82,12 +83,12 @@ class Parser:
 
     def parse_dataloader(self):
         parser = argparse.ArgumentParser(allow_abbrev=False)
-        parser.add_argument('--dataloader_type', type=str, choices=['im'], help='Select the dataloader (im: interaction modeling)')
+        parser.add_argument('--dataloader_type', type=str, choices=['sequential'], help='Select the dataloader')
         parser.add_argument('--train_batch_size', type=int, help='Batch size for training')
         parser.add_argument('--val_batch_size', type=int, help='Batch size for validation')
         parser.add_argument('--test_batch_size', type=int, help='Batch size for test')
         parser.add_argument('--max_seq_len', type=int, help="maximum sequence length")
-        parser.add_argument('--train_window_size', type=int, help="training window size to slide over the user's entire item sequences to obtain subsequences for training")
+        parser.add_argument('--window_size', type=int, help="window size to slide over the user's entire item sequences to obtain subsequences for training")
         # negative sampler for dataloader
         parser.add_argument('--train_negative_sampler_code', type=str, choices=['random', 'popular'], help='Selects negative sampler for training')
         parser.add_argument('--train_negative_sample_size', type=int, help='Negative sample size for training')

@@ -106,11 +106,7 @@ class AbstractDataset(metaclass=ABCMeta):
 
         special_tokens = DotMap()
         special_tokens.pad = 0
-        item_count = len(smap)
-        special_tokens.mask = item_count + 1
-        special_tokens.sos = item_count + 2
-        special_tokens.eos = item_count + 3
-
+        num_ratings = len(df['rating'].unique())
         num_interactions = len(df)
 
         dataset = {'user2dict': user2dict,
@@ -120,6 +116,7 @@ class AbstractDataset(metaclass=ABCMeta):
                    'umap': umap,
                    'smap': smap,
                    'special_tokens': special_tokens,
+                   'num_ratings': num_ratings,
                    'num_interactions': num_interactions}
 
         with dataset_path.open('wb') as f:

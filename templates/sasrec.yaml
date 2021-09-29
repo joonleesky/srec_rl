@@ -6,6 +6,7 @@ pilot: false
 pretrained_weights: null
 num_users: null
 num_items: null
+num_ratings: null
 num_interactions: null
 local_data_folder: ./data
 experiment_root: ./experiments
@@ -21,12 +22,12 @@ train_ratio: 0.85
 val_ratio: 0.05
 test_ratio: 0.1
 # dataloader
-dataloader_type: im
+dataloader_type: sequential
 train_batch_size: 256
 val_batch_size: 256
 test_batch_size: 256
 max_seq_len: 200
-train_window_size: 100
+window_size: 100
 # negative_sampler
 train_negative_sampler_code: popular
 train_negative_sample_size: 256

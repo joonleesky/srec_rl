@@ -25,7 +25,12 @@ class PopularNegativeSampler(AbstractNegativeSampler):
             p = prob.copy()
             p[zeros] = 0.0
             p = p / p.sum()
-            samples = np.random.choice(items, self.sample_size, replace=False, p=p)
+            
+            num_candidates = np.sum(p>0)
+            if num_candidates > self.sample_size:
+                samples = np.random.choice(items, self.sample_size, replace=False, p=p)
+            else:
+                samples = np.random.choice(items, self.sample_size, replace=True, p=p)
             negative_samples[user] = samples.tolist()
 
         return negative_samples

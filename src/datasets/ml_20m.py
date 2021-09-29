@@ -29,5 +29,11 @@ class ML20MDataset(AbstractDataset):
         folder_path = self._get_rawdata_folder_path()
         file_path = folder_path.joinpath('ratings.csv')
         df = pd.read_csv(file_path)
+        
+        def ceil_rating(rating):
+            rating = int(rating + 0.5)
+            return rating
+        
+        df['rating'] = df['rating'].progress_apply(lambda x: ceil_rating(x))
         df.columns = ['uid', 'sid', 'rating', 'timestamp']
         return df

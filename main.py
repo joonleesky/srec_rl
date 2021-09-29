@@ -19,23 +19,21 @@ def main(sys_argv: List[str] = None):
     dataset = init_dataset(args)
     dataset_path = dataset._get_preprocessed_folder_path()
     dataset = dataset.load_dataset()
-    print('num_interactions:',dataset['num_interactions'])
-    print('num_user:', len(dataset['umap']))
-    print('num_item:', len(dataset['smap']))
-    
-    import pdb
-    pdb.set_trace()
     
     # DataLoader
     dataloader = init_dataloader(args, dataset, dataset_path)
     train_loader, val_loader, test_loader = dataloader.get_pytorch_dataloaders()
     
+    print('num_interactions:',args.num_interactions)
+    print('num_user:', args.num_users)
+    print('num_item:', args.num_items)
+    print('num_ratings:', args.num_ratings)
+    import pdb
+    pdb.set_trace()
     # Reward Model
 
     # Behavior Model
     
-    # RL Model
-    model = init_model(args)
     
     
     
