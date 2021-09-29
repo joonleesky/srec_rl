@@ -172,10 +172,12 @@ class SequentialEvalDataset(SequentialTrainDataset):
         labels = [0] * len(next_items)
 
         # overlapped items must be evaluated with previous interacted logs.
+        # TODO: this masking seems to be wrong...?
         if begin_idx > 0:
-            next_items[:self.window_size] = [0] * self.window_size
-            next_ratings[:self.window_size] = [0] * self.window_size
-            masks[:self.window_size] = [1] * self.window_size
+            overlapped_window_size = (max_seq_len - self.window_size)
+            next_items[:overlapped_window_size] = [0] * overlapped_window_size
+            next_ratings[:overlapped_window_size] = [0] * overlapped_window_size
+            masks[:overlapped_window_size] = [1] * overlapped_window_size
             
         d = {
             'items':torch.LongTensor(items), 
