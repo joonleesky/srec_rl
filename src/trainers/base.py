@@ -1,4 +1,4 @@
-from ..common.logger import AverageMeterSet
+from ..common.logger import LoggerService, AverageMeterSet
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -11,7 +11,7 @@ import os
 
 
 class AbstractTrainer(metaclass=ABCMeta):
-    def __init__(self, args, model, train_loader, val_loader, test_loader, local_exp_path):
+    def __init__(self, args, model, train_loader, val_loader, test_loader):
         self.args = args
         self.device = args.device
         self.model = model.to(self.device)
@@ -28,10 +28,15 @@ class AbstractTrainer(metaclass=ABCMeta):
         self.clip_grad_norm = args.clip_grad_norm
         self.criterion = self._create_criterion()
 
+        self.logger = LoggerService(args)
         self.num_epochs = args.num_epochs
         self.metric_ks = args.metric_ks
         self.best_metric = args.best_metric
-        self.local_exp_path = local_exp_path
+        
+        self.best_model_state = {}
+        self.best_metric_value = 0
+        self.best_epoch = -1
+        self.steps = 0
 
     def _create_optimizer(self):
         args = self.args
@@ -49,6 +54,14 @@ class AbstractTrainer(metaclass=ABCMeta):
     @abstractmethod
     def _create_criterion(self):
         pass
+    
+    def _create_state_dict(self, epoch):
+        return {
+            STATE_DICT_KEY: self.model.module.state_dict() if self.use_parallel else self.model.state_dict(),
+            OPTIMIZER_STATE_DICT_KEY: self.optimizer.state_dict(),
+            SCHEDULER_STATE_DICT_KEY: self.lr_scheduler.state_dict(),
+            STEPS_DICT_KEY: epoch
+        }
             
     @classmethod
     @abstractmethod
@@ -64,19 +77,24 @@ class AbstractTrainer(metaclass=ABCMeta):
         pass
 
     def train(self):
-        best_metric_value = 0
-        best_epoch = -1
-        accum_iters = 0
         stop_training = False
         for epoch in range(self.num_epochs):
-            accum_iters = self.train_one_epoch(epoch, accum_iters)
-            val_log_data = self.validate(epoch, accum_iters, mode='val')
+            # train
+            train_log_data = self.train_one_epoch()
+            train_log_data['epoch'] = epoch
+            self.logger.log_train(train_log_data)
+            
+            # validation
+            val_log_data = self.validate(mode='val')
+            val_log_data['epoch'] = epoch
+            self.logger.log_val(val_log_data)
             
             # update the best_model
             cur_metric_value = val_log_data[self.best_metric]
-            if cur_metric_value > best_metric_value:
-                best_metric_value = cur_metric_value
-                best_epoch = epoch
+            if cur_metric_value > self.best_metric_value:
+                self.best_model_state = self._create_state_dict(epoch)
+                self.best_metric_value = cur_metric_value
+                self.best_epoch = epoch
              
             self.lr_scheduler.step()
 
@@ -94,7 +112,7 @@ class AbstractTrainer(metaclass=ABCMeta):
         #    'state_dict': (self._create_state_dict(epoch, accum_iter)),
         #})
 
-    def train_one_epoch(self, epoch, accum_iters):
+    def train_one_epoch(self):
         average_meter_set = AverageMeterSet()
         self.model.train()
         for batch_idx, batch in enumerate(tqdm(self.train_loader)):
@@ -103,7 +121,7 @@ class AbstractTrainer(metaclass=ABCMeta):
 
             self.optimizer.zero_grad()
             loss = self.calculate_loss(batch)
-            # append external training information to logger
+            average_meter_set.update('loss', loss.item())
             if isinstance(loss, tuple):
                 loss, extra_info = loss
                 for k, v in extra_info.items():
@@ -113,19 +131,19 @@ class AbstractTrainer(metaclass=ABCMeta):
             if self.clip_grad_norm is not None:
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.clip_grad_norm)
             self.optimizer.step()
-
-            average_meter_set.update('loss', loss.item())
-            accum_iters += batch_size
-
-        log_data = {
-            'epoch': epoch,
-            'accum_iters': accum_iters,
-        }
+            self.steps += 1
+            
+            # log the training information from the training process
+            log_data = {'step': self.steps}
+            log_data.update(average_meter_set.averages())
+            self.logger.log_train(log_data)
+            
+        log_data = {'step': self.steps}
         log_data.update(average_meter_set.averages())
-        self.logger.log_train(log_data)
-        return accum_iters
+        
+        return log_data
 
-    def validate(self, epoch, accum_iter, mode):
+    def validate(self, mode):
         if mode == 'val':
             loader = self.val_loader
         elif mode == 'test':
@@ -144,24 +162,7 @@ class AbstractTrainer(metaclass=ABCMeta):
                 for k, v in metrics.items():
                     average_meter_set.update(k, v)
                 
-                #if not self.pilot:
-                #    description_metrics = ['NDCG@%d' % k for k in self.metric_ks[:3]] +\
-                #                          ['Recall@%d' % k for k in self.metric_ks[:3]]
-                #    description = '{}: '.format(mode.capitalize()) + ', '.join(s + ' {:.3f}' for s in description_metrics)
-                #    description = description.replace('NDCG', 'N').replace('Recall', 'R')
-                #    description = description.format(*(average_meter_set[k].avg for k in description_metrics))
-                #    tqdm_dataloader.set_description(description)
-
-            log_data = {
-                'state_dict': (self._create_state_dict(epoch, accum_iters)),
-                'epoch': epoch,
-                'accum_iters': accum_iters,
-            }
+            log_data = {'step': self.steps}
             log_data.update(average_meter_set.averages())
-            if mode == 'val':
-                self.logger.log_val(log_data)
-            elif mode == 'test':
-                self.logger.log_test(log_data)
-            else:
-                raise ValueError
+
         return log_data

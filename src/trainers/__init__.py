@@ -8,6 +8,6 @@ TRAINERS = {c.code():c
             if c.code() is not None}
 
 
-def init_trainer(args, model, train_loader, val_loader, test_loader, local_exp_path):
+def init_trainer(args, model, train_loader, val_loader, test_loader):
     trainer = TRAINERS[args.trainer_type]
-    return trainer(args, model, train_loader, val_loader, test_loader, local_exp_path)
+    return trainer(args, model, train_loader, val_loader, test_loader)

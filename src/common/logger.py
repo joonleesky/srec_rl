@@ -1,3 +1,56 @@
+import wandb
+
+class LoggerService(object):
+    def __init__(self, args):
+        self.train_logger = WandbLogger(prefix='train')
+        self.val_logger = WandbLogger(prefix='val')
+        self.test_logger = WandbLogger(prefix='test') 
+
+        project_name = args.wandb_project_name
+        run_name = args.wandb_run_name
+
+        assert project_name is not None and run_name is not None
+        wandb.init(project=project_name, name=run_name, config=args)
+
+    def complete(self, log_data):
+        self.train_logger.complete(**log_data)
+        self.val_logger.complete(**log_data)
+        self.test_logger.complete(**log_data)
+
+    def log_train(self, log_data):
+        self.train_logger.log(**log_data)
+
+    def log_val(self, log_data):
+        self.val_logger.log(**log_data)
+
+    def log_test(self, log_data):
+        self.test_logger.log(**log_data)
+            
+            
+class WandbLogger(object):
+    def __init__(self, prefix=''):
+        self.prefix = prefix
+
+    def log(self, *args, **kwargs):
+        try:
+            step = kwargs['step']
+        except:
+            raise ValueError
+                                                    
+        log_dict = {}
+        for k, v in kwargs.items():
+            if k == 'step':
+                continue
+            elif k == 'epoch':
+                log_dict[k] = v
+            else:
+                log_dict[self.prefix + '_' + k] = v
+                
+        wandb.log(log_dict, step=step)
+
+    def complete(self, *args, **kwargs):
+        wandb.log({})  # ensure to not miss the last log
+
 
 
 class AverageMeterSet(object):

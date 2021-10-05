@@ -23,7 +23,6 @@ class SAS(AbstractModel):
         self.blocks = nn.ModuleList(
             [TransformerBlock(args) for _ in range(num_blocks)])
         self.head = self._init_head(args.head_type, hidden, num_item_ids)
-        self.criterion = nn.CrossEntropyLoss(reduction='none')
         
         self.apply(NormInitializer(args.model_init_range))
 
@@ -65,19 +64,3 @@ class SAS(AbstractModel):
         x = x.view(B, T, C)
         
         return x
-        
-        B, T, H = x.shape
-        _, _, C = d['candidates'].shape
-        x = x.view(B*T, H)
-        candidates = d['candidates'].view(B*T, C)
-        labels = d['labels'].view(B*T)
-        masks = d['masks'].view(B*T)
-        
-        # masked-output
-        logits = self.head(x, candidates)
-        loss = self.criterion(logits, labels)
-        loss = (1-masks) * loss
-        loss = loss.mean()
-        
-        return logits.view(B, T, C), loss
-        

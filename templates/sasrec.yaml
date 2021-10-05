@@ -9,9 +9,6 @@ num_items: null
 num_ratings: null
 num_interactions: null
 local_data_folder: ./data
-experiment_root: ./experiments
-experiment_group: test
-experiment_name: test
 # dataset
 dataset_type: ml-1m
 min_rating: 4
@@ -67,6 +64,6 @@ num_heads: 2
 dropout: 0.2
 output_info: false
 head_type: dot
-wandb_project_name: null
-wandb_run_name: null
-wandb_run_id: null
+wandb_project_name: bcq4rec
+wandb_run_name: test
+wandb_run_id: test

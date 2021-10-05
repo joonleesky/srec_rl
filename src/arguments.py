@@ -61,10 +61,6 @@ class Parser:
         parser.add_argument('--num_ratings', type=int, help='Number of possible ratings in the dataset. Its value is dynamically determined in dataloader')
         parser.add_argument('--num_interactions', type=int, help='Number of interactions in the dataset. Its value is dynamically determined in dataloader')
         parser.add_argument('--local_data_folder', type=str, help='Folder that contains raw/preprocessed data')
-        parser.add_argument('--experiment_root', type=str, help='Root folder of all experiments')
-        parser.add_argument('--experiment_group', type=str, help='Group folder inside Root folder')
-        parser.add_argument('--experiment_name', type=str, help='Name for this particular experiment inside Group folder')
-
         args = parser.parse_known_args(self.sys_argv)[0]
         return vars(args)
 

@@ -8,3 +8,5 @@ __pycache__
 # experimental logs
 /experiments
 
+# wandb
+/wandb

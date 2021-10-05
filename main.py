@@ -33,19 +33,12 @@ def main(sys_argv: List[str] = None):
     
     # Model
     model= init_model(args)
-    
-    # Logging_path
-    exp_root, exp_group, exp_name = args.experiment_root, args.experiment_group, args.experiment_name
-    assert exp_name is not None
-    local_exp_path = os.path.join(exp_root, exp_group, exp_name)
-    
-    # Trainer
-    trainer = init_trainer(args, model, train_loader, val_loader, test_loader, local_exp_path)
-    
-    
-    
-    
-    # Train
 
+    # Trainer
+    trainer = init_trainer(args, model, train_loader, val_loader, test_loader)
+    trainer.train()
+    
+    
+    
 if __name__ == '__main__':
     main()
