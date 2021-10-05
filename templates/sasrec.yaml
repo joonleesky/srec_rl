@@ -11,7 +11,7 @@ num_interactions: null
 local_data_folder: ./data
 experiment_root: ./experiments
 experiment_group: test
-experiment_name: null
+experiment_name: test
 # dataset
 dataset_type: ml-1m
 min_rating: 4
@@ -36,7 +36,7 @@ test_negative_sampler_code: popular
 test_negative_sample_size: 100
 test_negative_sampling_seed: 98765
 # trainer
-trainer_type: im
+trainer_type: nip
 device: cuda
 use_parallel: true
 num_workers: 0
@@ -57,7 +57,7 @@ metric_ks:
 - 50
 best_metric: NDCG@10
 # model
-model_type: sasrec
+model_type: sas
 model_init_seed: 0
 model_init_range: 0.02
 max_len: 200
@@ -66,8 +66,7 @@ num_blocks: 2
 num_heads: 2
 dropout: 0.2
 output_info: false
-headtype: dot
-head_use_ln: false
+head_type: dot
 wandb_project_name: null
 wandb_run_name: null
 wandb_run_id: null

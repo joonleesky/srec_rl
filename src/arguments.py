@@ -102,7 +102,7 @@ class Parser:
 
     def parse_trainer(self):
         parser = argparse.ArgumentParser(allow_abbrev=False)
-        parser.add_argument('--trainer_type', type=str, choices=['im', 'im_rm'], help='Selects the trainer for the experiment (im: interaction modeling, rm: rating modeling)')
+        parser.add_argument('--trainer_type', type=str, choices=['nip', 'nrp'], help='Selects the trainer for the experiment (nip: next-item prediction, nrp: next-reward prediction')
         parser.add_argument('--device', type=str, choices=['cpu', 'cuda'])
         parser.add_argument('--use_parallel', type=str2bool, help='If true, the program uses all visible cuda devices with DataParallel')
         parser.add_argument('--num_workers', type=int)
@@ -129,7 +129,7 @@ class Parser:
 
     def parse_model(self):
         parser = argparse.ArgumentParser(allow_abbrev=False)
-        parser.add_argument('--model_type', type=str, choices=['gru4rec', 'sasrec'], help='Selects the model for the experiment')
+        parser.add_argument('--model_type', type=str, choices=['gru', 'sas'], help='Selects the model for the experiment')
         parser.add_argument('--model_init_seed', type=int, help='Seed used to initialize the model parameters')
         parser.add_argument('--model_init_range', type=float, help='Range used to initialize the model parameters')
         # sasrec (i.e., transformer)
@@ -138,10 +138,7 @@ class Parser:
         parser.add_argument('--num_blocks', type=int, help='Number of transformer layers')
         parser.add_argument('--num_heads', type=int, help='Number of attention heads')
         parser.add_argument('--dropout', type=float, help='Dropout probability')
-        parser.add_argument('--output_info', type=str2bool, help='If true, the transformer also returns extra information (e.g., attention scores)')
-        parser.add_argument('--headtype', type=str, choices=['linear', 'dot'], help='Two types of prediction heads on top of transformers')
-        parser.add_argument('--head_use_ln', type=str2bool, help='If true, the prediction head also uses layer normalization')
-
+        parser.add_argument('--head_type', type=str, choices=['linear', 'dot'], help='Prediction heads on top of logits')
         args = parser.parse_known_args(self.sys_argv)[0]
         return vars(args)
 

@@ -1,4 +1,5 @@
 import sys
+import os
 from dotmap import DotMap
 from typing import List
 
@@ -6,6 +7,7 @@ from src.arguments import Parser
 from src.datasets import init_dataset
 from src.dataloaders import init_dataloader
 from src.models import init_model
+from src.trainers import init_trainer
 
 
 def main(sys_argv: List[str] = None):
@@ -28,11 +30,17 @@ def main(sys_argv: List[str] = None):
     print('num_user:', args.num_users)
     print('num_item:', args.num_items)
     print('num_ratings:', args.num_ratings)
-    import pdb
-    pdb.set_trace()
-    # Reward Model
-
-    # Behavior Model
+    
+    # Model
+    model= init_model(args)
+    
+    # Logging_path
+    exp_root, exp_group, exp_name = args.experiment_root, args.experiment_group, args.experiment_name
+    assert exp_name is not None
+    local_exp_path = os.path.join(exp_root, exp_group, exp_name)
+    
+    # Trainer
+    trainer = init_trainer(args, model, train_loader, val_loader, test_loader, local_exp_path)
     
     
     

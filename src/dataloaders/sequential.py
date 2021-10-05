@@ -64,14 +64,14 @@ class SequentialTrainDataset(torch.utils.data.Dataset):
         W = self.window_size
 
         # offset is exclusive
-        # e.g. seq_len: 500, max_seq_len: 200, train_window_size: 100
-        # train_indices: [0-200, 100-300, 200-400, 300-500]
+        # e.g. seq_len: 370, max_seq_len: 200, train_window_size: 100
+        # train_indices: [0-170, 70-270, 170-370]
         for user in self.user_ids:
             pos = len(self.user2dict[user]['items'])
             if W is None or W == 0:
                 offsets = [pos]
             else:
-                offsets = list(range(pos, T-1, -W))  # pos ~ T
+                offsets = list(range(pos, W, -W))  # pos ~ T
                 if len(offsets) == 0:
                     offsets = [pos]
             for offset in offsets:
@@ -84,14 +84,14 @@ class SequentialTrainDataset(torch.utils.data.Dataset):
     
     def __getitem__(self, index):
         """
-        Output
-            items: (S, ) sequence of interacted items
-            ratings: (S, ) sequence of ratings for interacted items
-            next_items: (S, ) sequence of next interacted items
-            next_ratings: (S, ) sequence of ratings for next interacted items
-            candidates: (S, 1+num_negatives) sequence of next items coupled with negative items
-            labels: (S, ) target labels for the candidate items
-            masks: (S, ) 1 if the target item must be excluded in calculating the loss
+        [Return]
+        items: (S, ) sequence of interacted items
+        ratings: (S, ) sequence of ratings for interacted items
+        next_items: (S, ) sequence of next interacted items
+        next_ratings: (S, ) sequence of ratings for next interacted items
+        candidates: (S, 1+num_negatives) sequence of next items coupled with negative items
+        labels: (S, ) target labels for the candidate items
+        masks: (S, ) 1 if the target item must be excluded in calculating the loss
         """
         user, offset = self.index2user_and_offsets[index]
         max_seq_len = self.max_seq_len
@@ -103,6 +103,7 @@ class SequentialTrainDataset(torch.utils.data.Dataset):
         end_idx = offset
         item_sequence = item_sequence[begin_idx:end_idx]
         rating_sequence = rating_sequence[begin_idx:end_idx]
+        
         
         items = item_sequence[:-1]
         ratings = rating_sequence[:-1]
@@ -141,6 +142,7 @@ class SequentialEvalDataset(SequentialTrainDataset):
         super().__init__(args, dataset, negative_samples, rng, user_ids)
 
     def __getitem__(self, index):
+        # currently, first interacted item is not evaluated!
         user, offset = self.index2user_and_offsets[index]
         max_seq_len = self.max_seq_len
         padding_len = max_seq_len - min(offset-1, max_seq_len)
@@ -172,7 +174,7 @@ class SequentialEvalDataset(SequentialTrainDataset):
         labels = [0] * len(next_items)
 
         # overlapped items must be evaluated with previous interacted logs.
-        # TODO: this masking seems to be wrong...?
+        # TODO: check masking again
         if begin_idx > 0:
             overlapped_window_size = (max_seq_len - self.window_size)
             next_items[:overlapped_window_size] = [0] * overlapped_window_size

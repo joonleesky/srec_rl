@@ -1,6 +1,5 @@
 from .base import AbstractModel
-from ..utils import all_subclasses
-from ..utils import import_all_subclasses
+from ..common.class_utils import all_subclasses, import_all_subclasses
 import_all_subclasses(__file__, __name__, AbstractModel)
 
 MODELS = {c.code():c
