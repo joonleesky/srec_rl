@@ -10,3 +10,6 @@ __pycache__
 
 # wandb
 /wandb
+
+# nohup
+nohup.out

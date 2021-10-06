@@ -1,4 +1,5 @@
 from .base import AbstractTrainer
+from ..common.metric import recalls_and_ndcgs_for_ks
 import torch
 import torch.nn as nn
 
@@ -27,4 +28,16 @@ class NIPTrainer(AbstractTrainer):
         return loss
 
     def calculate_metrics(self, batch):
-        return {'NDCG@10':0}
+        logits = self.model(batch['items'], batch['ratings'], batch['candidates'])
+        B, T, C = logits.shape
+        
+        logits = logits.view(B*T, -1)
+        labels = batch['labels'].view(B*T)
+        masks = batch['masks'].view(B*T)
+        
+        logits = torch.masked_select(logits, (masks==0).unsqueeze(1)).view(-1, C)
+        labels = torch.masked_select(labels, masks==0)
+        
+        metrics = recalls_and_ndcgs_for_ks(logits, labels, self.metric_ks)
+        
+        return metrics

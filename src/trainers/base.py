@@ -49,7 +49,7 @@ class AbstractTrainer(metaclass=ABCMeta):
             
     def _create_scheduler(self):
         args = self.args
-        return optim.lr_scheduler.StepLR(self.optimizer, step_size=args.decay_step, gamma=args.gamma)
+        return optim.lr_scheduler.CosineAnnealingLR(self.optimizer, T_max=args.num_epochs)
             
     @abstractmethod
     def _create_criterion(self):
@@ -57,10 +57,10 @@ class AbstractTrainer(metaclass=ABCMeta):
     
     def _create_state_dict(self, epoch):
         return {
-            STATE_DICT_KEY: self.model.module.state_dict() if self.use_parallel else self.model.state_dict(),
-            OPTIMIZER_STATE_DICT_KEY: self.optimizer.state_dict(),
-            SCHEDULER_STATE_DICT_KEY: self.lr_scheduler.state_dict(),
-            STEPS_DICT_KEY: epoch
+            'model_state_dict': self.model.module.state_dict() if self.use_parallel else self.model.state_dict(),
+            'optimizer_state_dict': self.optimizer.state_dict(),
+            'scheduler_state_dict': self.lr_scheduler.state_dict(),
+            'epoch': epoch
         }
             
     @classmethod
@@ -78,7 +78,12 @@ class AbstractTrainer(metaclass=ABCMeta):
 
     def train(self):
         stop_training = False
-        for epoch in range(self.num_epochs):
+        # validation at an initialization
+        val_log_data = self.validate(mode='val')
+        val_log_data['epoch'] = 0
+        self.logger.log_val(val_log_data)
+        
+        for epoch in range(1, self.num_epochs+1):
             # train
             train_log_data = self.train_one_epoch()
             train_log_data['epoch'] = epoch
@@ -97,20 +102,15 @@ class AbstractTrainer(metaclass=ABCMeta):
                 self.best_epoch = epoch
              
             self.lr_scheduler.step()
-
-        #best_model_logger = self.val_loggers[-1]
-        #assert isinstance(best_model_logger, BestModelLogger)
-        #weight_path = best_model_logger.filepath()
-        #if self.use_parallel:
-        #    self.model.module.load(weight_path)
-        #else:
-        #    self.model.load(weight_path)
-        #self.validate(best_epoch, accum_iter, mode='test')  # test result at best model
-        #        break
-
-        #self.logger_service.complete({
-        #    'state_dict': (self._create_state_dict(epoch, accum_iter)),
-        #})
+        
+        # test with the best_model
+        best_model_state_dict = self.best_model_state['model_state_dict']
+        if self.use_parallel:
+            self.model.module.load_state_dict(best_model_state_dict)
+        else:
+            self.model.load_state_dict(best_model_state_dict)
+        test_log_data = self.validate(mode='test')
+        self.logger.log_test(test_log_data)
 
     def train_one_epoch(self):
         average_meter_set = AverageMeterSet()
@@ -155,13 +155,13 @@ class AbstractTrainer(metaclass=ABCMeta):
         self.model.eval()
         with torch.no_grad():
             for batch_idx, batch in enumerate(tqdm(loader)):
-                batch_size = next(iter(batch.values())).size(0)
                 batch = {k:v.to(self.device) for k, v in batch.items()}
-
                 metrics = self.calculate_metrics(batch)
-                for k, v in metrics.items():
-                    average_meter_set.update(k, v)
                 
+                num_valid_targets = torch.sum(1-batch['masks']).item()
+                for k, v in metrics.items():
+                    average_meter_set.update(k, v, n=num_valid_targets)
+
             log_data = {'step': self.steps}
             log_data.update(average_meter_set.averages())
 

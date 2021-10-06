@@ -21,7 +21,7 @@ def main(sys_argv: List[str] = None):
     dataset = init_dataset(args)
     dataset_path = dataset._get_preprocessed_folder_path()
     dataset = dataset.load_dataset()
-    
+
     # DataLoader
     dataloader = init_dataloader(args, dataset, dataset_path)
     train_loader, val_loader, test_loader = dataloader.get_pytorch_dataloaders()

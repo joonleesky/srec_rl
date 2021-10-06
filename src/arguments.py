@@ -44,7 +44,6 @@ class Parser:
         configs.update(self.parse_dataloader())
         configs.update(self.parse_trainer())
         configs.update(self.parse_model())
-        configs.update(self.parse_wandb())
 
         configs = self.set_template(configs)
         return configs
@@ -61,6 +60,8 @@ class Parser:
         parser.add_argument('--num_ratings', type=int, help='Number of possible ratings in the dataset. Its value is dynamically determined in dataloader')
         parser.add_argument('--num_interactions', type=int, help='Number of interactions in the dataset. Its value is dynamically determined in dataloader')
         parser.add_argument('--local_data_folder', type=str, help='Folder that contains raw/preprocessed data')
+        parser.add_argument('--wandb_project_name', type=str, help='Project name for wandb')
+        parser.add_argument('--exp_name', type=str, help='experiment name to identify')
         args = parser.parse_known_args(self.sys_argv)[0]
         return vars(args)
 
@@ -107,9 +108,6 @@ class Parser:
         parser.add_argument('--lr', type=float, help='Learning rate')
         parser.add_argument('--weight_decay', type=float, help='l2 regularization')
         parser.add_argument('--momentum', type=float, help='sgd momentum')
-        # lr scheduler #
-        parser.add_argument('--decay_step', type=int, help='Decay step for StepLR')
-        parser.add_argument('--gamma', type=float, help='Gamma for StepLR')
         # clip grad norm #
         parser.add_argument('--clip_grad_norm', type=float)
         # epochs #
@@ -127,22 +125,11 @@ class Parser:
         parser = argparse.ArgumentParser(allow_abbrev=False)
         parser.add_argument('--model_type', type=str, choices=['gru', 'sas'], help='Selects the model for the experiment')
         parser.add_argument('--model_init_seed', type=int, help='Seed used to initialize the model parameters')
-        parser.add_argument('--model_init_range', type=float, help='Range used to initialize the model parameters')
         # sasrec (i.e., transformer)
-        parser.add_argument('--max_len', type=int, help='Length of the transformer model')
         parser.add_argument('--hidden_units', type=int, help='Hidden dimension size')
         parser.add_argument('--num_blocks', type=int, help='Number of transformer layers')
         parser.add_argument('--num_heads', type=int, help='Number of attention heads')
         parser.add_argument('--dropout', type=float, help='Dropout probability')
         parser.add_argument('--head_type', type=str, choices=['linear', 'dot'], help='Prediction heads on top of logits')
-        args = parser.parse_known_args(self.sys_argv)[0]
-        return vars(args)
-
-    def parse_wandb(self):
-        parser = argparse.ArgumentParser(allow_abbrev=False)
-        parser.add_argument('--wandb_project_name', type=str, help='Project name for wandb, if wandb is used')
-        parser.add_argument('--wandb_run_name', type=str, help='Run name for wandb, if wandb is used')
-        parser.add_argument('--wandb_run_id', type=str, help='Run id for wandb, if wandb is used')
-
         args = parser.parse_known_args(self.sys_argv)[0]
         return vars(args)

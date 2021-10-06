@@ -22,9 +22,10 @@ class SAS(AbstractModel):
         self.dropout = nn.Dropout(p=args.dropout)
         self.blocks = nn.ModuleList(
             [TransformerBlock(args) for _ in range(num_blocks)])
+        self.norm = LayerNorm(hidden)
         self.head = self._init_head(args.head_type, hidden, num_item_ids)
         
-        self.apply(NormInitializer(args.model_init_range))
+        self.apply(NormInitializer(hidden))
 
     @classmethod
     def code(cls):
@@ -53,6 +54,8 @@ class SAS(AbstractModel):
         # body
         for block in self.blocks:
             x = block(x, attn_mask)
+        # normalization is utilized on the output layer https://tunz.kr/post/4
+        x = self.norm(x)
         
         # head
         B, T, H = x.shape

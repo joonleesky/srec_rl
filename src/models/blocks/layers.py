@@ -53,11 +53,11 @@ class SublayerConnection(nn.Module):
         self.dropout = nn.Dropout(dropout)
     
     def forward(self, x, sublayer):
-        sub_output = sublayer(x)
+        # Pre-LN is utilized as suggested in https://arxiv.org/pdf/2002.04745.pdf
+        sub_output = sublayer(self.norm(x))
         if isinstance(sub_output, tuple):
             sub_output, rest = sub_output[0], sub_output[1:]
             output = x + self.dropout(sub_output)
-            output = self.norm(output)
             return (output, *rest)
         else:
-            return self.norm(x + self.dropout(sub_output))
+            return x + self.dropout(sub_output)

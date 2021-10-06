@@ -9,6 +9,8 @@ num_items: null
 num_ratings: null
 num_interactions: null
 local_data_folder: ./data
+wandb_project_name: bcq4rec
+exp_name: test
 # dataset
 dataset_type: ml-1m
 min_rating: 4
@@ -35,14 +37,12 @@ test_negative_sampling_seed: 98765
 # trainer
 trainer_type: nip
 device: cuda
-use_parallel: true
-num_workers: 0
+use_parallel: false
+num_workers: 4  # larger number of workers induce higher i/o bottleneck
 optimizer: adam
-lr: 0.001
+lr: 0.01
 weight_decay: 0.0
 momentum: null
-decay_step: 25
-gamma: 1.0
 clip_grad_norm: 5.0
 num_epochs: 100
 log_period_as_iter: 12800
@@ -51,19 +51,13 @@ metric_ks:
 - 5
 - 10
 - 20
-- 50
 best_metric: NDCG@10
 # model
 model_type: sas
 model_init_seed: 0
-model_init_range: 0.02
-max_len: 200
 hidden_units: 64
 num_blocks: 2
 num_heads: 2
-dropout: 0.2
+dropout: 0.1
 output_info: false
 head_type: dot
-wandb_project_name: bcq4rec
-wandb_run_name: test
-wandb_run_id: test

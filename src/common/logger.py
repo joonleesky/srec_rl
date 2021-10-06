@@ -7,10 +7,10 @@ class LoggerService(object):
         self.test_logger = WandbLogger(prefix='test') 
 
         project_name = args.wandb_project_name
-        run_name = args.wandb_run_name
-
-        assert project_name is not None and run_name is not None
-        wandb.init(project=project_name, name=run_name, config=args)
+        exp_name = args.exp_name
+        
+        assert project_name is not None and exp_name is not None
+        wandb.init(project=project_name, config=args)
 
     def complete(self, log_data):
         self.train_logger.complete(**log_data)
@@ -102,8 +102,9 @@ class AverageMeter(object):
         self.count = 0
 
     def update(self, val, n=1):
+        # TODO: description for using n
         self.val = val
-        self.sum += val
+        self.sum += (val * n)
         self.count += n
         self.avg = self.sum / self.count
 
