@@ -1,7 +1,8 @@
 from .base import AbstractTrainer
-from ..common.metric import recalls_and_ndcgs_for_ks
+from sklearn.metrics import accuracy_score, precision_score, recall_score
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 
 class NRPTrainer(AbstractTrainer):
@@ -10,34 +11,47 @@ class NRPTrainer(AbstractTrainer):
         
     @classmethod
     def code(cls):
-        return 'nip'
+        return 'nrp'
     
     def _create_criterion(self):
-        return nn.CrossEntropyLoss(reduction='none')
+        return nn.MSELoss(reduction='none')
 
     def calculate_loss(self, batch):
-        logits = self.model(batch['items'], batch['ratings'], batch['candidates'])
-        B, T, C = logits.shape
+        next_items = batch['next_items'].unsqueeze(-1)
+        logits = self.model(batch['items'], batch['ratings'], next_items)
+        B, T, _ = logits.shape
         
-        logits = logits.view(B*T, -1)
-        labels = batch['labels'].view(B*T)
+        logits = logits.view(B*T)
+        targets = batch['next_ratings'].view(B*T)
         masks = batch['masks'].view(B*T)
-        loss = self.criterion(logits, labels)
+        
+        loss = self.criterion(logits, targets)
         loss = ((1-masks) * loss).mean()
         
         return loss
 
     def calculate_metrics(self, batch):
-        logits = self.model(batch['items'], batch['ratings'], batch['candidates'])
-        B, T, C = logits.shape
+        next_items = batch['next_items'].unsqueeze(-1)
+        logits = self.model(batch['items'], batch['ratings'], next_items)
+        B, T, _ = logits.shape
         
-        logits = logits.view(B*T, -1)
-        labels = batch['labels'].view(B*T)
+        logits = logits.view(B*T)
+        targets = batch['next_ratings'].view(B*T)
         masks = batch['masks'].view(B*T)
         
-        logits = torch.masked_select(logits, (masks==0).unsqueeze(1)).view(-1, C)
-        labels = torch.masked_select(labels, masks==0)
+        logits = torch.masked_select(logits, masks==0)
+        targets = torch.masked_select(targets, masks==0)
         
-        metrics = recalls_and_ndcgs_for_ks(logits, labels, self.metric_ks)
+        metrics = {}
+        metrics['mae'] = F.l1_loss(logits, targets)
+        metrics['mse'] = F.mse_loss(logits, targets)
+        metrics['rmse'] = F.mse_loss(logits, targets).sqrt()
+        
+        threshold = self.args.min_rating
+        y_pred = (logits.cpu().numpy() >= threshold).astype(int)
+        y_true = (targets.cpu().numpy() >= threshold).astype(int)
+        metrics['acc'] = accuracy_score(y_pred, y_true)
+        metrics['precision'] = precision_score(y_pred, y_true)
+        metrics['recall'] = recall_score(y_pred, y_true)
         
         return metrics

@@ -1,5 +1,6 @@
 import sys
 import os
+import warnings
 from dotmap import DotMap
 from typing import List
 
@@ -9,6 +10,9 @@ from src.dataloaders import init_dataloader
 from src.models import init_model
 from src.trainers import init_trainer
 
+def warn(*args, **kwargs):
+    pass
+warnings.warn = warn
 
 def main(sys_argv: List[str] = None):
     # Parser
