@@ -3,7 +3,7 @@ from pathlib import Path
 import pickle
 
 
-class AbstractNegativeSampler(metaclass=ABCMeta):
+class BaseNegativeSampler(metaclass=ABCMeta):
     def __init__(self, user2dict, num_users, num_items, sample_size, seed, save_folder):
         self.user2dict = user2dict
         self.num_users = num_users

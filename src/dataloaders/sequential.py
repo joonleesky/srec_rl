@@ -1,8 +1,8 @@
-from .base import AbstractDataloader
+from .base import BaseDataloader
 import torch
 
 
-class SequentialDataloader(AbstractDataloader):
+class SequentialDataloader(BaseDataloader):
     def __init__(self, args, dataset, dataset_path):
         super().__init__(args, dataset, dataset_path)
 

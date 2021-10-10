@@ -1,8 +1,8 @@
-from .base import AbstractDataset
+from .base import BaseDataset
 import pandas as pd
 
 
-class TaobaoDataset(AbstractDataset):
+class TaobaoDataset(BaseDataset):
     @classmethod
     def code(cls):
         return 'taobao'

@@ -1,8 +1,8 @@
-from .base import AbstractDataset
+from .base import BaseDataset
 import pandas as pd
 
 
-class ML20MDataset(AbstractDataset):
+class ML20MDataset(BaseDataset):
     @classmethod
     def code(cls):
         return 'ml-20m'

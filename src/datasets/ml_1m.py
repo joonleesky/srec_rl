@@ -1,8 +1,8 @@
-from .base import AbstractDataset
+from .base import BaseDataset
 import pandas as pd
 
 
-class ML1MDataset(AbstractDataset):
+class ML1MDataset(BaseDataset):
     @classmethod
     def code(cls):
         return 'ml-1m'

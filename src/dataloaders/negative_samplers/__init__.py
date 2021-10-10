@@ -1,10 +1,10 @@
-from .base import AbstractNegativeSampler
+from .base import BaseNegativeSampler
 from ...common.class_utils import all_subclasses, import_all_subclasses
-import_all_subclasses(__file__, __name__, AbstractNegativeSampler)
+import_all_subclasses(__file__, __name__, BaseNegativeSampler)
 
 
 NEGATIVE_SAMPLERS = {c.code():c
-                     for c in all_subclasses(AbstractNegativeSampler)
+                     for c in all_subclasses(BaseNegativeSampler)
                      if c.code() is not None}
 
 

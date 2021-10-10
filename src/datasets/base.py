@@ -12,7 +12,7 @@ from ..common.file_utils import *
 tqdm.pandas()
 
 
-class AbstractDataset(metaclass=ABCMeta):
+class BaseDataset(metaclass=ABCMeta):
     def __init__(self, args):
         """        
         Arguments

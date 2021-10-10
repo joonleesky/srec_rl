@@ -1,4 +1,4 @@
-from .base import AbstractModel
+from .base import BaseModel
 from ..common.initialization import NormInitializer
 from .blocks.layers import *
 from .blocks.transformer import TransformerBlock
@@ -7,7 +7,7 @@ import torch
 import torch.nn as nn
 
 
-class SAS(AbstractModel):
+class SAS(BaseModel):
     def __init__(self, args):
         super().__init__(args)
         num_blocks = args.num_blocks

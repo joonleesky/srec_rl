@@ -38,8 +38,14 @@ def main(sys_argv: List[str] = None):
     # Model
     model= init_model(args)
 
+    # Env (used to evaluate the performance of cumulative satisfaction)
+    if args.reward_model_dir is not None:
+        env = init_env(args)
+    else:
+        env = None
+    
     # Trainer
-    trainer = init_trainer(args, model, train_loader, val_loader, test_loader)
+    trainer = init_trainer(args, model, env, train_loader, val_loader, test_loader)
     trainer.train()
     
     

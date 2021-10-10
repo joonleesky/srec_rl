@@ -1,9 +1,9 @@
-from .base import AbstractNegativeSampler
+from .base import BaseNegativeSampler
 from tqdm import trange
 import numpy as np
 
 
-class RandomNegativeSampler(AbstractNegativeSampler):
+class RandomNegativeSampler(BaseNegativeSampler):
     @classmethod
     def code(cls):
         return 'random'

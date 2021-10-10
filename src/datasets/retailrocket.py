@@ -1,8 +1,8 @@
-from .base import AbstractDataset
+from .base import BaseDataset
 import pandas as pd
 
 
-class RetailRocketDataset(AbstractDataset):
+class RetailRocketDataset(BaseDataset):
     @classmethod
     def code(cls):
         return 'retailrocket'

@@ -1,8 +1,8 @@
-from .base import AbstractDataset
+from .base import BaseDataset
 import pandas as pd
 
 
-class AmazonGameDataset(AbstractDataset):
+class AmazonGameDataset(BaseDataset):
     @classmethod
     def code(cls):
         return 'amz_game'

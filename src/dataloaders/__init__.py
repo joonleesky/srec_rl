@@ -1,10 +1,10 @@
-from .base import AbstractDataloader
+from .base import BaseDataloader
 from ..common.class_utils import all_subclasses, import_all_subclasses
-import_all_subclasses(__file__, __name__, AbstractDataloader)
+import_all_subclasses(__file__, __name__, BaseDataloader)
 
 
 DATALOADERS = {c.code():c
-               for c in all_subclasses(AbstractDataloader)
+               for c in all_subclasses(BaseDataloader)
                if c.code() is not None}
 
 

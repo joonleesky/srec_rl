@@ -4,7 +4,7 @@ from abc import *
 import random
 
 
-class AbstractDataloader(metaclass=ABCMeta):
+class BaseDataloader(metaclass=ABCMeta):
     def __init__(self, args, dataset, dataset_path):
         self.args = args
         seed = args.seed

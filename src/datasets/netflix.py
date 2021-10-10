@@ -1,4 +1,4 @@
-from .base import AbstractDataset
+from .base import BaseDataset
 import pandas as pd
 from collections import deque
 from datetime import datetime
@@ -7,7 +7,7 @@ from tqdm import tqdm
 tqdm.pandas()
 
 
-class NetflixDataset(AbstractDataset):
+class NetflixDataset(BaseDataset):
     @classmethod
     def code(cls):
         return 'netflix'

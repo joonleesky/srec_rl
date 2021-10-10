@@ -10,11 +10,12 @@ import pandas as pd
 import os
 
 
-class AbstractTrainer(metaclass=ABCMeta):
-    def __init__(self, args, model, train_loader, val_loader, test_loader):
+class BaseTrainer(metaclass=ABCMeta):
+    def __init__(self, args, model, env, train_loader, val_loader, test_loader):
         self.args = args
         self.device = args.device
         self.model = model.to(self.device)
+        self.env = env
         self.use_parallel = args.use_parallel
         if self.use_parallel:
             self.model = nn.DataParallel(self.model)

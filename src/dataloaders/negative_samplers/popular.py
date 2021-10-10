@@ -1,10 +1,10 @@
-from .base import AbstractNegativeSampler
+from .base import BaseNegativeSampler
 from tqdm import trange
 import numpy as np
 from collections import Counter
 
 
-class PopularNegativeSampler(AbstractNegativeSampler):
+class PopularNegativeSampler(BaseNegativeSampler):
     @classmethod
     def code(cls):
         return 'popular'

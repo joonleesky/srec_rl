@@ -1,4 +1,4 @@
-from .base import AbstractDataset
+from .base import BaseDataset
 import pandas as pd
 from datetime import datetime
 import time
@@ -6,7 +6,7 @@ from tqdm import tqdm
 tqdm.pandas()
 
 
-class EachMovieDataset(AbstractDataset):
+class EachMovieDataset(BaseDataset):
     @classmethod
     def code(cls):
         return 'eachmovie'

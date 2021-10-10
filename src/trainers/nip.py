@@ -1,12 +1,12 @@
-from .base import AbstractTrainer
+from .base import BaseTrainer
 from ..common.metric import recalls_and_ndcgs_for_ks
 import torch
 import torch.nn as nn
 
 
-class NIPTrainer(AbstractTrainer):
-    def __init__(self, args, model, train_loader, val_loader, test_loader):
-        super().__init__(args, model, train_loader, val_loader, test_loader)
+class NIPTrainer(BaseTrainer):
+    def __init__(self, args, model, env, train_loader, val_loader, test_loader):
+        super().__init__(args, model, env, train_loader, val_loader, test_loader)
         
     @classmethod
     def code(cls):

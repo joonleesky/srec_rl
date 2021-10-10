@@ -1,8 +1,8 @@
-from .base import AbstractDataset
+from .base import BaseDataset
 import pandas as pd
 
 
-class AmazonBeautyDataset(AbstractDataset):
+class AmazonBeautyDataset(BaseDataset):
     @classmethod
     def code(cls):
         return 'amz_beauty'

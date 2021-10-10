@@ -1,4 +1,4 @@
-from .base import AbstractDataset
+from .base import BaseDataset
 import pandas as pd
 from datetime import datetime
 import time
@@ -6,7 +6,7 @@ from tqdm import tqdm
 tqdm.pandas()
 
 
-class RC15Dataset(AbstractDataset):
+class RC15Dataset(BaseDataset):
     @classmethod
     def code(cls):
         return 'rc15'
