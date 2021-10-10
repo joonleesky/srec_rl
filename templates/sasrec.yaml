@@ -62,6 +62,6 @@ num_heads: 2
 output_info: false
 head_type: dot
 # env
-reward_model_dir: null
+reward_model_dir: sas_block2_d64
 num_cold_start: 5
 num_warm_start: 40

@@ -9,6 +9,7 @@ from src.datasets import init_dataset
 from src.dataloaders import init_dataloader
 from src.models import init_model
 from src.trainers import init_trainer
+from src.envs import init_env
 
 def warn(*args, **kwargs):
     pass
