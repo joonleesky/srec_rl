@@ -108,8 +108,9 @@ class Parser:
         parser.add_argument('--lr', type=float, help='Learning rate')
         parser.add_argument('--weight_decay', type=float, help='l2 regularization')
         parser.add_argument('--momentum', type=float, help='sgd momentum')
-        # clip grad norm #
+        # regularization
         parser.add_argument('--clip_grad_norm', type=float)
+        parser.add_argument('--dropout', type=float, help='Dropout probability')
         # epochs #
         parser.add_argument('--num_epochs', type=int, help='Maximum number of epochs to run')
         # logger #
@@ -125,11 +126,18 @@ class Parser:
         parser = argparse.ArgumentParser(allow_abbrev=False)
         parser.add_argument('--model_type', type=str, choices=['gru', 'sas'], help='Selects the model for the experiment')
         parser.add_argument('--model_init_seed', type=int, help='Seed used to initialize the model parameters')
-        # sasrec (i.e., transformer)
         parser.add_argument('--hidden_units', type=int, help='Hidden dimension size')
         parser.add_argument('--num_blocks', type=int, help='Number of transformer layers')
-        parser.add_argument('--num_heads', type=int, help='Number of attention heads')
-        parser.add_argument('--dropout', type=float, help='Dropout probability')
         parser.add_argument('--head_type', type=str, choices=['linear', 'dot'], help='Prediction heads on top of logits')
+        # sasrec
+        parser.add_argument('--num_heads', type=int, help='Number of attention heads')
+        args = parser.parse_known_args(self.sys_argv)[0]
+        return vars(args)
+    
+    def parse_env(self):
+        parser = argparse.ArgumentParser(allow_abbrev=False)
+        parser.add_argument('--reward_model_dir', type=str, help='directory of the pre-trained reward model')
+        parser.add_argument('--num_cold_start', type=int, help='number of interactions to define cold-start users')
+        parser.add_argument('--num_warm_start', type=int, help='number of interactions to define warm-start users')
         args = parser.parse_known_args(self.sys_argv)[0]
         return vars(args)

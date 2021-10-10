@@ -44,6 +44,7 @@ lr: 0.01
 weight_decay: 0.0001
 momentum: null
 clip_grad_norm: 5.0
+dropout: 0.1
 num_epochs: 100
 log_period_as_iter: 12800
 metric_ks:
@@ -58,6 +59,5 @@ model_init_seed: 0
 hidden_units: 64
 num_blocks: 2
 num_heads: 2
-dropout: 0.1
 output_info: false
 head_type: dot

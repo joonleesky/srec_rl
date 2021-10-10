@@ -26,12 +26,13 @@ class EachMovieDataset(AbstractDataset):
     def load_ratings_df(self):
         folder_path = self._get_rawdata_folder_path()
         file_path = folder_path.joinpath('Vote.txt')
-        df = pd.read_csv(file_path, sep='\t', names=['uid','sid','category','rating','timestamp'])
+        df = pd.read_csv(file_path, sep='\t', names=['uid','sid','rating','weight','timestamp'])
         
         def datetime_to_timestamp(s):
             timestamp = int(time.mktime(datetime.strptime(s, '%m/%d/%y %H:%M:%S').timetuple()))
             return timestamp
         
+        df['rating'] = (df['rating'] * 5 + 1).astype(int)
         df['timestamp'] = df['timestamp'].progress_apply(lambda x: datetime_to_timestamp(x))
         df = df[['uid', 'sid', 'rating', 'timestamp']]
 

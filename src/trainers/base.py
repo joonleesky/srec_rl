@@ -33,7 +33,6 @@ class AbstractTrainer(metaclass=ABCMeta):
         self.metric_ks = args.metric_ks
         self.best_metric = args.best_metric
         
-        self.best_model_state = {}
         self.best_metric_value = 0
         self.best_epoch = -1
         self.steps = 0
@@ -97,18 +96,19 @@ class AbstractTrainer(metaclass=ABCMeta):
             # update the best_model
             cur_metric_value = val_log_data[self.best_metric]
             if cur_metric_value > self.best_metric_value:
-                self.best_model_state = self._create_state_dict(epoch)
                 self.best_metric_value = cur_metric_value
                 self.best_epoch = epoch
+                best_model_state_dict = self._create_state_dict(epoch)
+                self.logger.save_state_dict(best_model_state_dict)
              
             self.lr_scheduler.step()
         
         # test with the best_model
-        best_model_state_dict = self.best_model_state['model_state_dict']
+        best_model_state = self.logger.load_state_dict()['model_state_dict']
         if self.use_parallel:
-            self.model.module.load_state_dict(best_model_state_dict)
+            self.model.module.load_state_dict(best_model_state)
         else:
-            self.model.load_state_dict(best_model_state_dict)
+            self.model.load_state_dict(best_model_state)
         test_log_data = self.validate(mode='test')
         self.logger.log_test(test_log_data)
 

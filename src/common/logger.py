@@ -1,17 +1,24 @@
 import wandb
+import torch
+import os
+import json
 
 class LoggerService(object):
     def __init__(self, args):
         self.train_logger = WandbLogger(prefix='train')
         self.val_logger = WandbLogger(prefix='val')
         self.test_logger = WandbLogger(prefix='test') 
-
+        
         project_name = args.wandb_project_name
         exp_name = args.exp_name
         
         assert project_name is not None and exp_name is not None
-        wandb.init(project=project_name, config=args)
-
+        wandb.init(project=project_name, config=args)        
+        self.model_path = wandb.run.dir + '/model.pth'
+        self.config_path = wandb.run.dir + '/config.json'
+        with open(self.config_path, 'w') as f:
+            json.dump(args.toDict(), f)
+        
     def complete(self, log_data):
         self.train_logger.complete(**log_data)
         self.val_logger.complete(**log_data)
@@ -25,6 +32,12 @@ class LoggerService(object):
 
     def log_test(self, log_data):
         self.test_logger.log(**log_data)
+        
+    def save_state_dict(self, state_dict):
+        torch.save(state_dict, self.model_path)
+    
+    def load_state_dict(self):
+        return torch.load(self.model_path)
             
             
 class WandbLogger(object):

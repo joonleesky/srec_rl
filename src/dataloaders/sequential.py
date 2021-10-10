@@ -89,7 +89,7 @@ class SequentialTrainDataset(torch.utils.data.Dataset):
         ratings: (S, ) sequence of ratings for interacted items
         next_items: (S, ) sequence of next interacted items
         next_ratings: (S, ) sequence of ratings for next interacted items
-        candidates: (S, 1+num_negatives) sequence of next items coupled with negative items
+        candidates: (S, C=1+num_negatives) sequence of next items coupled with negative items
         labels: (S, ) target labels for the candidate items
         masks: (S, ) 1 if the target item must be excluded in calculating the loss
         """
@@ -103,7 +103,6 @@ class SequentialTrainDataset(torch.utils.data.Dataset):
         end_idx = offset
         item_sequence = item_sequence[begin_idx:end_idx]
         rating_sequence = rating_sequence[begin_idx:end_idx]
-        
         
         items = item_sequence[:-1]
         ratings = rating_sequence[:-1]

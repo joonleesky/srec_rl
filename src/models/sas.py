@@ -54,7 +54,7 @@ class SAS(AbstractModel):
         # body
         for block in self.blocks:
             x = block(x, attn_mask)
-        # normalization is utilized on the output layer https://tunz.kr/post/4
+        # normalization is utilized on the output with pre_LN https://tunz.kr/post/4
         x = self.norm(x)
         
         # head
