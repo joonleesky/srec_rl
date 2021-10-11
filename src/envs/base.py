@@ -8,22 +8,25 @@ import torch
 
 
 class BaseEnv(metaclass=ABCMeta):
-    def __init__(self, args):
+    def __init__(self, args, dataset):
         self.args = args
+        self.user2dict = dataset['user2dict']
         self.device = args.device
         self.reward_model_dir = self._get_reward_model_dir()
         self.reward_model = self._init_reward_model().to(self.device)
         
-    def step(self, action): 
+    @classmethod
+    @abstractmethod
+    def code(cls):
+        pass
+
+    @abstractmethod    
+    def step(self, item): 
         pass
     
-    
-    def reset(self, item_ids, rating_ids): 
-        self.state = {'item_ids':item_ids, 
-                      'rating_ids':rating_ids}
-        # for safeness
-        _state = copy.deepcopy(self.state)
-        return _state
+    @abstractmethod
+    def reset(self, user_ids, num_interactions): 
+        pass
 
     def _init_reward_model(self):
         args = self.args
@@ -39,7 +42,10 @@ class BaseEnv(metaclass=ABCMeta):
         with open(config_path, "r") as f:
             rm_config = json.load(f)
         rm_config = DotMap(rm_config, _dynamic=False)
-        reward_model = init_model(reward_model_config)
+        reward_model = init_model(rm_config)
+        
+        model_state = torch.load(model_path)['model_state_dict']
+        reward_model.load(model_state, args.use_parallel)
         
         return reward_model
                 

@@ -137,8 +137,10 @@ class Parser:
     
     def parse_env(self):
         parser = argparse.ArgumentParser(allow_abbrev=False)
+        parser.add_argument('--env_type', type=str, choices=['rating', 'click'], help='Selects the environment for the experiment')
         parser.add_argument('--reward_model_dir', type=str, help='directory name of the pre-trained reward model')
         parser.add_argument('--num_cold_start', type=int, help='number of interactions to define cold-start users')
         parser.add_argument('--num_warm_start', type=int, help='number of interactions to define warm-start users')
+        parser.add_argument('--metric_ts', nargs='+', type=int, help='list of t for Reward@t PR@t and Recall@t')
         args = parser.parse_known_args(self.sys_argv)[0]
         return vars(args)

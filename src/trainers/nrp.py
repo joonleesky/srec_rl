@@ -6,8 +6,8 @@ import torch.nn.functional as F
 
 
 class NRPTrainer(BaseTrainer):
-    def __init__(self, args, model, env, train_loader, val_loader, test_loader):
-        super().__init__(args, model, env, train_loader, val_loader, test_loader)
+    def __init__(self, args, dataset, dataloader, env, model):
+        super().__init__(args, dataset, dataloader, env, model)
         
     @classmethod
     def code(cls):
@@ -55,3 +55,6 @@ class NRPTrainer(BaseTrainer):
         metrics['recall'] = recall_score(y_pred, y_true)
         
         return metrics
+
+    def recommend(self, state):
+        pass

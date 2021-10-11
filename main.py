@@ -29,24 +29,23 @@ def main(sys_argv: List[str] = None):
 
     # DataLoader
     dataloader = init_dataloader(args, dataset, dataset_path)
-    train_loader, val_loader, test_loader = dataloader.get_pytorch_dataloaders()
     
     print('num_interactions:',args.num_interactions)
     print('num_user:', args.num_users)
     print('num_item:', args.num_items)
     print('num_ratings:', args.num_ratings)
     
-    # Model
-    model= init_model(args)
-
     # Env (used to evaluate the performance of cumulative satisfaction)
     if args.reward_model_dir is not None:
-        env = init_env(args)
+        env = init_env(args, dataset)
     else:
         env = None
     
+    # Model
+    model= init_model(args)
+    
     # Trainer
-    trainer = init_trainer(args, model, env, train_loader, val_loader, test_loader)
+    trainer = init_trainer(args, dataset, dataloader, env, model)
     trainer.train()
     
     

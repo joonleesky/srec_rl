@@ -11,18 +11,17 @@ import os
 
 
 class BaseTrainer(metaclass=ABCMeta):
-    def __init__(self, args, model, env, train_loader, val_loader, test_loader):
+    def __init__(self, args, dataset, dataloader, env, model):
         self.args = args
+        self.dataset = dataset
+        self.train_loader, self.val_loader, self.test_loader = dataloader.get_pytorch_dataloaders()
+        self.env = env
+        
         self.device = args.device
         self.model = model.to(self.device)
-        self.env = env
         self.use_parallel = args.use_parallel
         if self.use_parallel:
             self.model = nn.DataParallel(self.model)
-
-        self.train_loader = train_loader
-        self.val_loader = val_loader
-        self.test_loader = test_loader
         
         self.optimizer = self._create_optimizer()
         self.lr_scheduler = self._create_scheduler()
@@ -41,9 +40,13 @@ class BaseTrainer(metaclass=ABCMeta):
     def _create_optimizer(self):
         args = self.args
         if args.optimizer.lower() == 'adam':
-            return optim.Adam(self.model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+            return optim.Adam(self.model.parameters(), 
+                              lr=args.lr, 
+                              weight_decay=args.weight_decay)
         elif args.optimizer.lower() == 'sgd':
-            return optim.SGD(self.model.parameters(), lr=args.lr, weight_decay=args.weight_decay, momentum=args.momentum)
+            return optim.SGD(self.model.parameters(), 
+                             lr=args.lr, weight_decay=args.weight_decay, 
+                             momentum=args.momentum)
         else:
             raise ValueError
             
@@ -75,6 +78,10 @@ class BaseTrainer(metaclass=ABCMeta):
     @abstractmethod
     def calculate_metrics(self, batch):
         pass
+    
+    @abstractmethod
+    def recommend(self, state):
+        pass
 
     def train(self):
         stop_training = False
@@ -94,6 +101,10 @@ class BaseTrainer(metaclass=ABCMeta):
             val_log_data['epoch'] = epoch
             self.logger.log_val(val_log_data)
             
+            # simulation code
+            self.simulate(mode='val')
+            
+            
             # update the best_model
             cur_metric_value = val_log_data[self.best_metric]
             if cur_metric_value > self.best_metric_value:
@@ -106,17 +117,14 @@ class BaseTrainer(metaclass=ABCMeta):
         
         # test with the best_model
         best_model_state = self.logger.load_state_dict()['model_state_dict']
-        if self.use_parallel:
-            self.model.module.load_state_dict(best_model_state)
-        else:
-            self.model.load_state_dict(best_model_state)
+        self.model.load(best_model_state, self.use_parallel)
         test_log_data = self.validate(mode='test')
         self.logger.log_test(test_log_data)
 
     def train_one_epoch(self):
         average_meter_set = AverageMeterSet()
         self.model.train()
-        for batch_idx, batch in enumerate(tqdm(self.train_loader)):
+        for batch in tqdm(self.train_loader):
             batch_size = next(iter(batch.values())).size(0)
             batch = {k:v.to(self.device) for k, v in batch.items()}
 
@@ -155,7 +163,7 @@ class BaseTrainer(metaclass=ABCMeta):
         average_meter_set = AverageMeterSet()
         self.model.eval()
         with torch.no_grad():
-            for batch_idx, batch in enumerate(tqdm(loader)):
+            for batch in tqdm(loader):
                 batch = {k:v.to(self.device) for k, v in batch.items()}
                 metrics = self.calculate_metrics(batch)
                 
@@ -167,3 +175,39 @@ class BaseTrainer(metaclass=ABCMeta):
             log_data.update(average_meter_set.averages())
 
         return log_data
+    
+    def simulate(self, mode):
+        args = self.args
+        if mode == 'val':
+            user_ids = self.dataset['val_uids']
+            batch_size = args.val_batch_size
+        elif mode == 'test':
+            user_ids = self.dataset['test_uids']
+            batch_size = args.test_batch_size
+        else:
+            raise ValueError
+        
+        def chunks(lst, n):
+            for i in range(0, len(lst), n):
+                yield lst[i:i + n]
+            
+        user_ids_chunks = list(chunks(user_ids, batch_size))
+        
+        self.model.eval()
+        with torch.no_grad():
+            for batch_user_ids in tqdm(user_ids_chunks):
+                max_timesteps = max(args.metric_ts)
+                # cold-start simulation
+                state = self.env.reset(batch_user_ids, num_interactions=args.num_cold_start)
+                state = {k:v.to(self.device) for k, v in state.items()}
+                item = self.recommend(state)
+                
+                
+                
+                
+                # warm-start simulation
+                state = self.env.reset(batch_user_ids, num_interactions=args.num_warm_start)
+                
+                
+                import pdb
+                pdb.set_trace()
