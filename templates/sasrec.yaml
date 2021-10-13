@@ -12,7 +12,7 @@ local_data_folder: ./data
 wandb_project_name: bcq4rec
 exp_name: test
 # dataset
-dataset_type: ml-1m
+dataset_type: eachmovie
 min_rating: 4
 min_uc: 5
 min_sc: 5

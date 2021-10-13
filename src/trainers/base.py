@@ -102,8 +102,7 @@ class BaseTrainer(metaclass=ABCMeta):
             self.logger.log_val(val_log_data)
             
             # simulation code
-            self.simulate(mode='val')
-            
+            # self.simulate(mode='val')
             
             # update the best_model
             cur_metric_value = val_log_data[self.best_metric]
@@ -202,12 +201,5 @@ class BaseTrainer(metaclass=ABCMeta):
                 state = {k:v.to(self.device) for k, v in state.items()}
                 item = self.recommend(state)
                 
-                
-                
-                
                 # warm-start simulation
                 state = self.env.reset(batch_user_ids, num_interactions=args.num_warm_start)
-                
-                
-                import pdb
-                pdb.set_trace()
