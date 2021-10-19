@@ -100,8 +100,8 @@ class Parser:
 
     def parse_trainer(self):
         parser = argparse.ArgumentParser(allow_abbrev=False)
-        parser.add_argument('--trainer_type', type=str, choices=['nip', 'nrp'], help='Selects the trainer for the experiment (nip: next-item prediction, nrp: next-reward prediction')
-        parser.add_argument('--device', type=str, choices=['cpu', 'cuda'])
+        parser.add_argument('--trainer_type', type=str, choices=['nip', 'nrp', 'random'], help='Selects the trainer for the experiment (nip: next-item prediction, nrp: next-reward prediction')
+        parser.add_argument('--device', type=str)
         parser.add_argument('--use_parallel', type=str2bool, help='If true, the program uses all visible cuda devices with DataParallel')
         parser.add_argument('--num_workers', type=int)
         # optimizer #

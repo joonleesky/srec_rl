@@ -1,6 +1,7 @@
 from .base import BaseEnv
 import torch
 import numpy as np
+import scipy
 import copy
 
 
@@ -33,19 +34,19 @@ class RatingEnv(BaseEnv):
         x = self.reward_model(items, ratings, forward_head=False, predict=True)
         x = x.reshape(B, -1)
         candidates = actions.unsqueeze(1)
-        mu, log_std = self.reward_model.head.forward_dist(x, candidates)
-        std = torch.exp(log_std)
-        rewards = mu.squeeze(-1)
+        mus, log_stds = self.reward_model.head.forward_dist(x, candidates)
+        stds = torch.exp(log_stds)
+        rewards = mus.squeeze(-1)
         
         # low-confidence-bound
-        
-        #candidates = actions.repeat(T, 1).T.unsqueeze(-1)        
-        #rewards = self.reward_model(items, ratings, candidates)[:, -1, :] 
-        #rewards = rewards.squeeze(-1) # (B,)
+        confidence_level = self.args.confidence_level
+        lower_bounds = []
+        for mu, std in zip(mus, stds):
+            lower_bounds.append(scipy.stats.norm.ppf(confidence_level, loc=mu.cpu(), scale=std.cpu()))
         
         # transition
         actions = actions.cpu().numpy()
-        rewards = rewards.cpu().numpy()
+        rewards = np.array(lower_bounds).flatten()
         for idx, (action, reward) in enumerate(zip(actions, rewards)):
             self.state['items'][idx].append(action)
             self.state['ratings'][idx].append(np.clip(round(reward), 0, self.args.num_ratings))
@@ -110,7 +111,6 @@ class RatingEnv(BaseEnv):
         rewards[np.arange(B)[:, None], items.cpu().numpy()] = -1e9
         
         # get positive items
-        positive_items = rewards >= self.args.min_rating
         num_positives = np.sum(rewards >= self.args.min_rating, 1)
         
         return num_positives

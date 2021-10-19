@@ -45,7 +45,7 @@ weight_decay: 0.00001
 momentum: null
 clip_grad_norm: 5.0
 num_epochs: 20
-simulation_period: 20
+simulation_period: 10
 metric_ks:
 - 1
 - 5
