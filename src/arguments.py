@@ -114,11 +114,12 @@ class Parser:
         parser.add_argument('--dropout', type=float, help='Dropout probability')
         # epochs #
         parser.add_argument('--num_epochs', type=int, help='Maximum number of epochs to run')
-        # logger #
-        parser.add_argument('--log_period_as_iter', type=int, help='Will log every log_period_as_iter')
         # evaluation #
+        parser.add_argument('--simulation_period', type=int, help='epoch period of environment simulation')
+        parser.add_argument('--metric_ts', nargs='+', type=int, help='list of t for Reward@t PR@t and Recall@t')
         parser.add_argument('--metric_ks', nargs='+', type=int, help='list of k for NDCG@k and Recall@k')
         parser.add_argument('--best_metric', type=str, help='This metric will be used to compare and determine the best model')
+        parser.add_argument('--best_metric_criterion', type=str, choices=['low','high'], help='whether the (low) or (high)er metric indicate the better model')
 
         args = parser.parse_known_args(self.sys_argv)[0]
         return vars(args)
@@ -129,7 +130,7 @@ class Parser:
         parser.add_argument('--model_init_seed', type=int, help='Seed used to initialize the model parameters')
         parser.add_argument('--hidden_units', type=int, help='Hidden dimension size')
         parser.add_argument('--num_blocks', type=int, help='Number of transformer layers')
-        parser.add_argument('--head_type', type=str, choices=['linear', 'dot'], help='Prediction heads on top of logits')
+        parser.add_argument('--head_type', type=str, choices=['linear', 'dot', 'dot_dist'], help='Prediction heads on top of logits')
         # sasrec
         parser.add_argument('--num_heads', type=int, help='Number of attention heads')
         args = parser.parse_known_args(self.sys_argv)[0]
@@ -139,8 +140,8 @@ class Parser:
         parser = argparse.ArgumentParser(allow_abbrev=False)
         parser.add_argument('--env_type', type=str, choices=['rating', 'click'], help='Selects the environment for the experiment')
         parser.add_argument('--reward_model_dir', type=str, help='directory name of the pre-trained reward model')
+        parser.add_argument('--confidence_level', type=float, help='confidence level to determine the confidence bound (0.5 is netural)')
         parser.add_argument('--num_cold_start', type=int, help='number of interactions to define cold-start users')
-        parser.add_argument('--num_warm_start', type=int, help='number of interactions to define warm-start users')
-        parser.add_argument('--metric_ts', nargs='+', type=int, help='list of t for Reward@t PR@t and Recall@t')
+        parser.add_argument('--num_warm_start', type=int, help='number of interactions to define warm-start user')
         args = parser.parse_known_args(self.sys_argv)[0]
         return vars(args)

@@ -1,4 +1,5 @@
 from ..common.logger import LoggerService, AverageMeterSet
+from ..common.metric import *
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -32,8 +33,12 @@ class BaseTrainer(metaclass=ABCMeta):
         self.num_epochs = args.num_epochs
         self.metric_ks = args.metric_ks
         self.best_metric = args.best_metric
+        self.best_metric_criterion = args.best_metric_criterion
         
-        self.best_metric_value = 0
+        if self.best_metric_criterion == 'low':
+            self.best_metric_value = np.inf
+        elif self.best_metric_criterion == 'high':
+            self.best_metric_value = -np.inf
         self.best_epoch = -1
         self.steps = 0
 
@@ -85,11 +90,14 @@ class BaseTrainer(metaclass=ABCMeta):
 
     def train(self):
         stop_training = False
+        
         # validation at an initialization
         val_log_data = self.validate(mode='val')
+        val_sim_data = self.simulate(mode='val')
+        val_log_data.update(val_sim_data)
         val_log_data['epoch'] = 0
         self.logger.log_val(val_log_data)
-        
+
         for epoch in range(1, self.num_epochs+1):
             # train
             train_log_data = self.train_one_epoch()
@@ -98,15 +106,16 @@ class BaseTrainer(metaclass=ABCMeta):
             
             # validation
             val_log_data = self.validate(mode='val')
+            if epoch % self.args.simulation_period == 0:
+                val_sim_data = self.simulate(mode='val')
+                val_log_data.update(val_sim_data)
             val_log_data['epoch'] = epoch
-            self.logger.log_val(val_log_data)
-            
-            # simulation code
-            # self.simulate(mode='val')
+            self.logger.log_val(val_log_data)            
             
             # update the best_model
             cur_metric_value = val_log_data[self.best_metric]
-            if cur_metric_value > self.best_metric_value:
+            if (self.best_metric_criterion == 'low' and cur_metric_value < self.best_metric_value) \
+                or (self.best_metric_criterion == 'high' and cur_metric_value > self.best_metric_value):
                 self.best_metric_value = cur_metric_value
                 self.best_epoch = epoch
                 best_model_state_dict = self._create_state_dict(epoch)
@@ -118,6 +127,8 @@ class BaseTrainer(metaclass=ABCMeta):
         best_model_state = self.logger.load_state_dict()['model_state_dict']
         self.model.load(best_model_state, self.use_parallel)
         test_log_data = self.validate(mode='test')
+        test_sim_data = self.simulate(mode='test')
+        test_log_data.update(test_sim_data)
         self.logger.log_test(test_log_data)
 
     def train_one_epoch(self):
@@ -170,8 +181,8 @@ class BaseTrainer(metaclass=ABCMeta):
                 for k, v in metrics.items():
                     average_meter_set.update(k, v, n=num_valid_targets)
 
-            log_data = {'step': self.steps}
-            log_data.update(average_meter_set.averages())
+        log_data = {'step': self.steps}
+        log_data.update(average_meter_set.averages())
 
         return log_data
     
@@ -192,14 +203,32 @@ class BaseTrainer(metaclass=ABCMeta):
             
         user_ids_chunks = list(chunks(user_ids, batch_size))
         
+        average_meter_set = AverageMeterSet()
         self.model.eval()
         with torch.no_grad():
             for batch_user_ids in tqdm(user_ids_chunks):
-                max_timesteps = max(args.metric_ts)
-                # cold-start simulation
-                state = self.env.reset(batch_user_ids, num_interactions=args.num_cold_start)
-                state = {k:v.to(self.device) for k, v in state.items()}
-                item = self.recommend(state)
-                
-                # warm-start simulation
                 state = self.env.reset(batch_user_ids, num_interactions=args.num_warm_start)
+                while True:
+                    state = {k:torch.LongTensor(v).to(self.device) for k, v in state.items()}
+                    action = self.recommend(state)
+                    next_state, reward, done, info = self.env.step(action)
+                    state = next_state
+                    
+                    if done == True:
+                        break
+                        
+                rewards = np.array(next_state['rewards'])[:, args.num_warm_start:]
+                num_positives = next_state['num_positives']
+                metrics = average_rewards_precisions_and_recalls_for_ts(rewards, 
+                                                                        args.min_rating, 
+                                                                        num_positives,
+                                                                        args.metric_ts)
+                for k, v in metrics.items():
+                    average_meter_set.update(k, v, n=len(num_positives))
+
+            # TODO: warm-start simulation
+                
+        log_data = {'step': self.steps}
+        log_data.update(average_meter_set.averages())
+
+        return log_data

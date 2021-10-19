@@ -15,6 +15,9 @@ class BaseEnv(metaclass=ABCMeta):
         self.reward_model_dir = self._get_reward_model_dir()
         self.reward_model = self._init_reward_model().to(self.device)
         
+        self.timestep = 0
+        self.max_timesteps = max(args.metric_ts)
+        
     @classmethod
     @abstractmethod
     def code(cls):

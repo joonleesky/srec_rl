@@ -37,11 +37,14 @@ class SAS(BaseModel):
         elif head_type == 'dot':
             emb = self.item_embedding
             head = DotProductPredictionHead(emb, d_model, d_out)
+        elif head_type == 'dot_dist':
+            emb = self.item_embedding
+            head = DotProductDistributionHead(emb, d_model, d_out)
         else:
             raise NotImplemented
         return head
     
-    def forward(self, item_ids, rating_ids, candidates):
+    def forward(self, item_ids, rating_ids, candidates=None, predict=False, forward_head=True):
         # casual attention mask
         attn_mask = (item_ids > 0).unsqueeze(1).repeat(1, item_ids.size(1), 1).unsqueeze(1)
         attn_mask.tril_()
@@ -57,13 +60,17 @@ class SAS(BaseModel):
         # normalization is utilized on the output with pre_LN https://tunz.kr/post/4
         x = self.norm(x)
         
+        if predict:
+            x = x[:, -1, :].unsqueeze(1) # (B, 1, H)
+            
         # head
-        B, T, H = x.shape
-        _, _, C = candidates.shape
-        
-        x = x.view(B*T, H)
-        candidates = candidates.view(B*T, C)
-        x = self.head(x, candidates)
-        x = x.view(B, T, C)
+        if forward_head:
+            B, T, H = x.shape        
+            x = x.reshape(B*T, H)
+
+            if candidates is not None:
+                candidates = candidates.reshape(B*T, -1)
+            x = self.head(x, candidates)
+            x = x.view(B, T, -1)
         
         return x
