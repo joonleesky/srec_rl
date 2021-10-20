@@ -225,8 +225,6 @@ class BaseTrainer(metaclass=ABCMeta):
                                                                         args.metric_ts)
                 for k, v in metrics.items():
                     average_meter_set.update(k, v, n=len(num_positives))
-
-            # TODO: warm-start simulation
                 
         log_data = {'step': self.steps}
         log_data.update(average_meter_set.averages())

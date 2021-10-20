@@ -35,7 +35,7 @@ test_negative_sampler_code: popular
 test_negative_sample_size: 100
 test_negative_sampling_seed: 98765
 # trainer
-trainer_type: nip
+trainer_type: dqn
 device: cuda
 use_parallel: false
 num_workers: 4  # larger number of workers induce higher i/o bottleneck
@@ -50,10 +50,10 @@ simulation_period: 10
 metric_ks:
 - 1
 - 10
-best_metric: NDCG@10
-best_metric_criterion: high
+best_metric: loss
+best_metric_criterion: low
 gamma: 0.99
-target_update_freq: 0
+target_update_freq: 100
 # model
 model_type: sas
 model_init_seed: 0

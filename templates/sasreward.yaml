@@ -53,6 +53,8 @@ metric_ks:
 - 20
 best_metric: nll
 best_metric_criterion: low
+gamma: 0.99
+target_update_freq: 0
 # model
 model_type: sas
 model_init_seed: 0
@@ -70,7 +72,5 @@ num_cold_start: 5
 num_warm_start: 40
 metric_ts:
 - 1
-- 5
 - 10
-- 20
 - 40

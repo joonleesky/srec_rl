@@ -104,8 +104,19 @@ class RatingEnv(BaseEnv):
         
         # compare with all the existing items
         B, T = items.shape
-        rewards = self.reward_model(items, ratings, predict=True).squeeze(1)
-        rewards = rewards.cpu().numpy()
+        x = self.reward_model(items, ratings, forward_head=False, predict=True)
+        x = x.reshape(B, -1)
+        mus, log_stds = self.reward_model.head.forward_dist(x)
+        stds = torch.exp(log_stds)
+        rewards = mus.squeeze(-1)
+        
+        # low-confidence-bound
+        confidence_level = self.args.confidence_level
+        lower_bounds = []
+        for mu, std in zip(mus, stds):
+            lower_bounds.append(scipy.stats.norm.ppf(confidence_level, loc=mu.cpu(), scale=std.cpu()))
+        
+        rewards = np.array(lower_bounds)
         
         # exclude the interacted items
         rewards[np.arange(B)[:, None], items.cpu().numpy()] = -1e9

@@ -100,7 +100,7 @@ class Parser:
 
     def parse_trainer(self):
         parser = argparse.ArgumentParser(allow_abbrev=False)
-        parser.add_argument('--trainer_type', type=str, choices=['nip', 'nrp', 'random'], help='Selects the trainer for the experiment (nip: next-item prediction, nrp: next-reward prediction')
+        parser.add_argument('--trainer_type', type=str, choices=['nip', 'nrp', 'random', 'pop', 'dqn', 'bcq'], help='Selects the trainer for the experiment (nip: next-item prediction, nrp: next-reward prediction')
         parser.add_argument('--device', type=str)
         parser.add_argument('--use_parallel', type=str2bool, help='If true, the program uses all visible cuda devices with DataParallel')
         parser.add_argument('--num_workers', type=int)
@@ -120,7 +120,10 @@ class Parser:
         parser.add_argument('--metric_ks', nargs='+', type=int, help='list of k for NDCG@k and Recall@k')
         parser.add_argument('--best_metric', type=str, help='This metric will be used to compare and determine the best model')
         parser.add_argument('--best_metric_criterion', type=str, choices=['low','high'], help='whether the (low) or (high)er metric indicate the better model')
-
+        # reinforcement learning
+        parser.add_argument('--gamma', type=float, help='discount_factor')
+        parser.add_argument('--target_update_freq', type=int, help='update frequencey of the target network')
+        
         args = parser.parse_known_args(self.sys_argv)[0]
         return vars(args)
 
@@ -133,6 +136,7 @@ class Parser:
         parser.add_argument('--head_type', type=str, choices=['linear', 'dot', 'dot_dist'], help='Prediction heads on top of logits')
         # sasrec
         parser.add_argument('--num_heads', type=int, help='Number of attention heads')
+        
         args = parser.parse_known_args(self.sys_argv)[0]
         return vars(args)
     

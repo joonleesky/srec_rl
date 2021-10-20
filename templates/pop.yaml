@@ -35,23 +35,24 @@ test_negative_sampler_code: popular
 test_negative_sample_size: 100
 test_negative_sampling_seed: 98765
 # trainer
-trainer_type: nip
+trainer_type: pop
 device: cuda
 use_parallel: false
 num_workers: 4  # larger number of workers induce higher i/o bottleneck
 optimizer: adam
-lr: 0.01
-weight_decay: 0.0001
+lr: 0.001
+weight_decay: 0.00001
 momentum: null
 clip_grad_norm: 5.0
-dropout: 0.1
-num_epochs: 100
+num_epochs: 20
 simulation_period: 10
 metric_ks:
 - 1
+- 5
 - 10
-best_metric: NDCG@10
-best_metric_criterion: high
+- 20
+best_metric: nll
+best_metric_criterion: low
 gamma: 0.99
 target_update_freq: 0
 # model
@@ -60,8 +61,9 @@ model_init_seed: 0
 hidden_units: 64
 num_blocks: 2
 num_heads: 2
+dropout: 0.1
 output_info: false
-head_type: dot
+head_type: dot_dist
 # env
 env_type: rating
 reward_model_dir: sas_block2_d64
