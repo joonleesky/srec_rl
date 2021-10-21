@@ -30,12 +30,7 @@ def main(sys_argv: List[str] = None):
     # DataLoader
     dataloader = init_dataloader(args, dataset, dataset_path)
     
-    print('num_interactions:',args.num_interactions)
-    print('num_user:', args.num_users)
-    print('num_item:', args.num_items)
-    print('num_ratings:', args.num_ratings)
-    
-    # Env (used to evaluate the performance of cumulative satisfaction)
+    # Reward_model (used to evaluate the performance in offline manner)
     if args.reward_model_dir is not None:
         env = init_env(args, dataset)
     else:
