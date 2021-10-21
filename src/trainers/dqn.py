@@ -23,6 +23,7 @@ class DQNTrainer(BaseTrainer):
         pass
 
     def calculate_loss(self, batch):
+        # get current and target q-value
         B, T = batch['items'].shape
         q_value = self.model(batch['items'], batch['ratings'], batch['next_items'])
         reward = batch['next_ratings']

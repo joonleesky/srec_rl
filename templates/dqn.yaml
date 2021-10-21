@@ -40,8 +40,8 @@ device: cuda
 use_parallel: false
 num_workers: 4  # larger number of workers induce higher i/o bottleneck
 optimizer: adam
-lr: 0.01
-weight_decay: 0.0001
+lr: 0.00001
+weight_decay: 0.00001
 momentum: null
 clip_grad_norm: 5.0
 dropout: 0.1
@@ -53,7 +53,7 @@ metric_ks:
 best_metric: loss
 best_metric_criterion: low
 gamma: 0.99
-target_update_freq: 100
+target_update_freq: 1000
 # model
 model_type: sas
 model_init_seed: 0

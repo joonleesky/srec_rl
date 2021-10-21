@@ -15,11 +15,11 @@ def run_experiment(experiment):
 
 
 if __name__ == '__main__':
-    default = {'--exp_name': '1020_pop',
-               '--template': 'pop'}
+    default = {'--exp_name': '1020_sasr',
+               '--template': 'sasreward'}
 
-    dataset_types = ['eachmovie'] #, 'ml-20m', 'netflix']
-    seeds = ['0', '1', '2', '3', '4']
+    dataset_types = ['eachmovie', 'ml-20m', 'netflix']
+    seeds = ['0', '1', '2']
     confidence_levels = ['0.4', '0.5']
     num_devices = 4
     num_exp_per_device = 2
