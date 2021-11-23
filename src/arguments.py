@@ -120,6 +120,12 @@ class Parser:
         parser.add_argument('--metric_ks', nargs='+', type=int, help='list of k for NDCG@k and Recall@k')
         parser.add_argument('--best_metric', type=str, help='This metric will be used to compare and determine the best model')
         parser.add_argument('--best_metric_criterion', type=str, choices=['low','high'], help='whether the (low) or (high)er metric indicate the better model')
+        # MAB
+        parser.add_argument('--mab_type', type=str, choices=['linucb', 'eps_greedy'], help='type of mab')
+        parser.add_argument('--alpha', type=float, help='alpha of linucb')
+        parser.add_argument('--eps', type=float, help='epsilon of eps-greedy')
+        parser.add_argument('--n_dim', type=int , help='size of context')
+        
         # reinforcement learning
         parser.add_argument('--gamma', type=float, help='discount_factor')
         parser.add_argument('--target_update_freq', type=int, help='update frequencey of the target network')

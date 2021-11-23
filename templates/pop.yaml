@@ -36,7 +36,7 @@ test_negative_sample_size: 100
 test_negative_sampling_seed: 98765
 # trainer
 trainer_type: pop
-device: cuda
+device: cpu
 use_parallel: false
 num_workers: 4  # larger number of workers induce higher i/o bottleneck
 optimizer: adam

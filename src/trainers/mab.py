@@ -7,15 +7,14 @@ from tqdm import tqdm
 class MABTrainer(BaseTrainer):
     def __init__(self, args, dataset, dataloader, env, model):
         super().__init__(args, dataset, dataloader, env, model)
+                
+        self.n_dim = self.args.n_dim
+        self.num_epochs = self.args.num_epochs
         
-        self.n_dim = 10
-        
-        self.mab = EpsGreedy(self.n_dim, self.args.num_items+1, 0.05)
-        
-        # if args.mab_type == 'linucb':
-        #     self.mab = LinUCB(5, self.args.num_items+1, 1.0)
-        # elif args.mab_type == 'eps_greedy': 
-        #     self.mab = EpsGreedy(5, self.args.num_items+1, 0.1)
+        if self.args.mab_type == 'linucb':
+            self.mab = LinUCB(self.n_dim, self.args.num_items+1, self.args.alpha)
+        elif self.args.mab_type == 'eps_greedy': 
+            self.mab = EpsGreedy(self.n_dim, self.args.num_items+1, self.args.eps)
         
     @classmethod
     def code(cls):
@@ -31,25 +30,31 @@ class MABTrainer(BaseTrainer):
         return {}
     
     def train(self):
-        count = 1
-        for batch in tqdm(self.train_loader):
-            batch_size = next(iter(batch.values())).size(0)
-            batch = {k:v.to(self.device) for k, v in batch.items()}
+        for epoch in range(1, self.num_epochs+1):
+            count = 1
+            for batch in tqdm(self.train_loader):
+                batch_size = next(iter(batch.values())).size(0)
+                batch = {k:v.to(self.device) for k, v in batch.items()}
+
+                B, T = batch['items'].shape
+
+                items = batch['items'].cpu().numpy()
+                ratings = batch['next_ratings'].cpu().numpy()
+                arm = batch['next_items'].cpu().numpy()
+
+                context = items[:,-self.n_dim:]
+                arm = arm[:,-1]
+                reward = ratings[:,-1]
+
+                reward_arms, chosen_arms = self.mab.train(context, arm, reward, B)
+                # print('Batch {} -> MAB average reward: {}'.format(count, np.mean(reward_arms)))
+                # print(chosen_arms)
+                count += 1
             
-            B, T = batch['items'].shape
-            
-            items = batch['items'].cpu().numpy()
-            ratings = batch['next_ratings'].cpu().numpy()
-            arm = batch['next_items'].cpu().numpy()
-            
-            context = items[:,-self.n_dim:]
-            arm = arm[:,-1]
-            reward = ratings[:,-1]
-            
-            reward_arms, chosen_arms = self.mab.train(context, arm, reward, B)
-            # print('Batch {} -> MAB average reward: {}'.format(count, np.mean(reward_arms)))
-            # print(chosen_arms)
-            count += 1
+            # validation
+            val_log_data = self.validate(mode='val')
+            val_log_data['epoch'] = epoch
+            self.logger.log_val(val_log_data)
             
         test_sim_data = self.simulate(mode='test')
         self.logger.log_test(test_sim_data)
@@ -116,13 +121,14 @@ class LinUCB():
         for i in range(np.shape(contexts)[0]):
             action = self.get_action(contexts[i,:])
             if T<nrounds:
-                # get the reward of chosen arm at round T
-                reward_arms[T] = rewards[i]
-                # Update matrix A and b 
-                self.update(action, rewards[i], contexts[i,:])
-                # store chosen arm at round T
-                chosen_arms[T] = action
-                T +=1
+                if action == arms[i]:
+                    # get the reward of chosen arm at round T
+                    reward_arms[T] = rewards[i]
+                    # Update matrix A and b 
+                    self.update(action, rewards[i], contexts[i,:])
+                    # store chosen arm at round T
+                    chosen_arms[T] = action
+                    T +=1
             else:
                 # if desired tround ends, terminate the loop
                 break
@@ -182,13 +188,14 @@ class EpsGreedy():
         for i in range(np.shape(contexts)[0]):
             action = self.get_action(contexts[i,:])
             if T<nrounds:
-                # get the reward of chosen arm at round T
-                reward_arms[T] = rewards[i]
-                # Update matrix A and b 
-                self.update(action, rewards[i], contexts[i,:])
-                # store chosen arm at round T
-                chosen_arms[T] = action
-                T +=1
+                if action == arms[i]:
+                    # get the reward of chosen arm at round T
+                    reward_arms[T] = rewards[i]
+                    # Update matrix A and b 
+                    self.update(action, rewards[i], contexts[i,:])
+                    # store chosen arm at round T
+                    chosen_arms[T] = action
+                    T +=1
             else:
                 # if desired tround ends, terminate the loop
                 break

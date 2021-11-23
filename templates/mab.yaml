@@ -36,7 +36,10 @@ test_negative_sample_size: 100
 test_negative_sampling_seed: 98765
 # trainer
 trainer_type: mab
-mab_type: eps_greedy # [linucb, eps_greedy]
+mab_type: linucb # [linucb, eps_greedy]
+alpha: 1.0
+eps: 0.05
+n_dim: 10
 device: cpu
 use_parallel: false
 num_workers: 4  # larger number of workers induce higher i/o bottleneck
@@ -45,7 +48,7 @@ lr: 0.001
 weight_decay: 0.00001
 momentum: null
 clip_grad_norm: 5.0
-num_epochs: 20
+num_epochs: 1
 simulation_period: 10
 metric_ks:
 - 1

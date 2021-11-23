@@ -47,7 +47,7 @@ class BaseEnv(metaclass=ABCMeta):
         rm_config = DotMap(rm_config, _dynamic=False)
         reward_model = init_model(rm_config)
         
-        model_state = torch.load(model_path)['model_state_dict']
+        model_state = torch.load(model_path, map_location=self.device)['model_state_dict']
         reward_model.load(model_state, args.use_parallel)
         
         return reward_model
