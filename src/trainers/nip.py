@@ -2,6 +2,7 @@ from .base import BaseTrainer
 from ..common.metric import recalls_and_ndcgs_for_ks
 import torch
 import torch.nn as nn
+import numpy as np
 
 
 class NIPTrainer(BaseTrainer):
@@ -38,9 +39,20 @@ class NIPTrainer(BaseTrainer):
         logits = torch.masked_select(logits, (masks==0).unsqueeze(1)).view(-1, C)
         labels = torch.masked_select(labels, masks==0)
         
-        metrics = recalls_and_ndcgs_for_ks(logits, labels, self.metric_ks)
+        metrics = recalls_and_ndcgs_for_ks(logits.cpu().numpy(), labels.cpu().numpy(), self.metric_ks)
         
         return metrics
 
     def recommend(self, state):
-        pass
+        items = state['items']
+        ratings = state['ratings']
+        
+        B, T = state['items'].shape
+        logits = self.model(items, ratings, predict=True).squeeze(1)
+
+        # interacted items must be excluded
+        logits = logits.cpu().numpy()
+        logits[np.arange(B)[:, None], items.cpu().numpy()] = -1e9
+        action = np.argmax(logits, 1)
+
+        return action

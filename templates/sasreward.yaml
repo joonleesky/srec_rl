@@ -41,17 +41,20 @@ use_parallel: false
 num_workers: 4  # larger number of workers induce higher i/o bottleneck
 optimizer: adam
 lr: 0.001
-weight_decay: 0.0001
+weight_decay: 0.00001
 momentum: null
 clip_grad_norm: 5.0
-num_epochs: 100
-log_period_as_iter: 12800
+num_epochs: 20
+simulation_period: 10
 metric_ks:
 - 1
 - 5
 - 10
 - 20
-best_metric: rmse
+best_metric: nll
+best_metric_criterion: low
+gamma: 0.99
+target_update_freq: 0
 # model
 model_type: sas
 model_init_seed: 0
@@ -60,15 +63,14 @@ num_blocks: 2
 num_heads: 2
 dropout: 0.1
 output_info: false
-head_type: dot
+head_type: dot_dist
 # env
 env_type: rating
 reward_model_dir: sas_block2_d64
+confidence_level: 0.5
 num_cold_start: 5
 num_warm_start: 40
 metric_ts:
 - 1
-- 5
 - 10
-- 20
 - 40

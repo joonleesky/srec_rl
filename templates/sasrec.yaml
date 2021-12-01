@@ -46,13 +46,14 @@ momentum: null
 clip_grad_norm: 5.0
 dropout: 0.1
 num_epochs: 100
-log_period_as_iter: 12800
+simulation_period: 10
 metric_ks:
 - 1
-- 5
 - 10
-- 20
 best_metric: NDCG@10
+best_metric_criterion: high
+gamma: 0.99
+target_update_freq: 0
 # model
 model_type: sas
 model_init_seed: 0
@@ -64,11 +65,11 @@ head_type: dot
 # env
 env_type: rating
 reward_model_dir: sas_block2_d64
+confidence_level: 0.5
+gamma: 0.99
 num_cold_start: 5
 num_warm_start: 40
 metric_ts:
 - 1
-- 5
 - 10
-- 20
 - 40
